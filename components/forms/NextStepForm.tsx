@@ -8,7 +8,7 @@ import { markNextStepDone, setNextStep } from "@/lib/threads";
 import type { Thread } from "@/lib/types";
 import { LIMITS, validateNextStep } from "@/lib/validation";
 import { Button, ButtonLink } from "../ui/Button";
-import { TextField } from "../ui/Field";
+import { TextArea } from "../ui/Field";
 
 /**
  * One current next step per thread: save, change, or mark it done. The next step changes only when
@@ -26,7 +26,7 @@ export function NextStepForm({
   const router = useRouter();
   const [text, setText] = useState(thread.nextStep?.text ?? "");
   const [error, setError] = useState<string | undefined>();
-  const fieldRef = useRef<HTMLInputElement>(null);
+  const fieldRef = useRef<HTMLTextAreaElement>(null);
 
   function finish(flashed: ReturnType<typeof saveFlash>) {
     setFlash(returnTo === "home" ? "home" : thread.id, flashed);
@@ -60,7 +60,7 @@ export function NextStepForm({
   return (
     <form noValidate onSubmit={submit} className="space-y-6 border-t border-line pt-5">
       <div data-tour="next-step">
-        <TextField
+        <TextArea
           label="What will you read or think about next?"
           hint="One concrete thing, like 'Read chapter 3' or 'Find an article on…'."
           value={text}
@@ -71,7 +71,8 @@ export function NextStepForm({
           error={error}
           required
           counterMax={LIMITS.nextStep}
-          inputRef={fieldRef}
+          rows={2}
+          textareaRef={fieldRef}
         />
       </div>
       <div className="flex flex-wrap items-center gap-3">

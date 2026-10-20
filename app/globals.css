@@ -79,6 +79,47 @@ body {
   }
 }
 
+/* First-visit welcome (about 2.8 s). The paper covers the page from the first frame. The text fades in over 0.5 s
+   while rising 6px, holds for 1.5 s, and fades out over 0.5 s; only then does the paper fade (0.3 s) to reveal the
+   page, so the text never overlaps it. Dismissing early fades both from where they are (in code). Reduced motion
+   skips the welcome entirely. */
+.welcome-layer {
+  animation: welcome-reveal 2800ms both;
+}
+.welcome-text {
+  animation: welcome-text 2500ms both;
+}
+
+@keyframes welcome-text {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+    animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  20% {
+    opacity: 1;
+    transform: none;
+  }
+  80% {
+    opacity: 1;
+    animation-timing-function: ease-in-out;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes welcome-reveal {
+  0%,
+  89% {
+    opacity: 1;
+    animation-timing-function: ease-in-out;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

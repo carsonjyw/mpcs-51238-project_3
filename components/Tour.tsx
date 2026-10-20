@@ -40,7 +40,11 @@ export function Tour({
   const [open, setOpen] = useState(() => shouldShowChapter(chapter));
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
-  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  // Start from the real window size (the tour only renders in the browser), so the very first frame is already
+  // laid out for this screen: docked on phones, and the first scroll check sees the panel where it really is.
+  const [viewport, setViewport] = useState(() =>
+    typeof window === "undefined" ? { width: 0, height: 0 } : { width: window.innerWidth, height: window.innerHeight },
+  );
   const panelRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -232,14 +236,16 @@ export function Tour({
       }}
     >
       {/* The spotlight: everything outside the highlighted area is dimmed and can't be clicked. */}
+      {/* Keyed separately, so the spotlight appears in place instead of transitioning from the full-screen dim. */}
       {spot ? (
         <div
+          key="spot"
           aria-hidden="true"
           className="pointer-events-none fixed border-2 border-accent transition-all duration-200 motion-reduce:transition-none"
           style={{ ...spot, boxShadow: "0 0 0 9999px rgba(28, 26, 22, 0.55)" }}
         />
       ) : (
-        <div aria-hidden="true" className="fixed inset-0 bg-ink/55" />
+        <div key="dim" aria-hidden="true" className="fixed inset-0 bg-ink/55" />
       )}
 
       <div

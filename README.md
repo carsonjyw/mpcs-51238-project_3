@@ -438,3 +438,94 @@ legend; the returning home leading with the saved work and next step.
 - **Phone size (390 × 844):** only the returning home and the map.
 - **Not part of this check:** no physical device or assistive technology was used. A study with a real person,
   physical-phone testing and screen-reader testing aren't required by the assignment and weren't done here.
+
+### Follow-up changes and verification
+
+Made after the first-run check above, which is left as originally recorded. Only the two changes below were made, and
+**neither has been rechecked on the deployed site**: every check listed here ran locally on the development server
+(http://localhost:3102) in headless Chrome, with fresh temporary profiles, on October 20, 2026. The other first-run
+findings are unchanged.
+
+#### 1. Response to usability feedback: writing space
+
+From the first-run finding about small text fields (next step cut off while editing, note scrolling inside a 2-line
+box).
+
+**Was text lost?** No; the truncation was **visual only**. Before changing anything, a 184-character next step and a
+481-character note were saved, the page was refreshed, and the saved values were compared (desktop, 1440 × 900):
+- both were stored in full and identical after the refresh;
+- both were shown in full on the map and in the List view;
+- the change form reopened with the full next step.
+
+The next step had been a one-line input that scrolled sideways, and the note box was 2 lines tall and scrolled inside.
+
+**Change:**
+- The contribution note now shows **4 lines**.
+- The next step is now a **2-line field that wraps**.
+
+Labels, hints, validation messages, character limits (200 and 500), saved data and Cancel are unchanged. Longer text
+scrolls inside the field. Because the next step is now a multi-line field, Enter adds a line break rather than saving;
+this wasn't tested separately.
+
+**Checked locally at 1440 × 900 and 390 × 844** (part of the focused run below; all passed at both sizes):
+- **Next step:**
+  - a multi-line field with 2–3 visible lines, the same label, hint and required state, within the screen width;
+  - empty → the same error, nothing saved;
+  - over 200 characters → the limit error, text kept, nothing saved;
+  - long text scrolls inside the field;
+  - Cancel saves nothing, and Cancel after editing keeps the saved step;
+  - 184 characters saved, identical after a refresh and shown in full, and the change form is prefilled with all of it.
+- **Note:**
+  - at least 4 visible lines, the same placeholder and hint;
+  - empty → the same error;
+  - over 500 characters → the limit error, text kept;
+  - long text scrolls inside the field, with no sideways page scrolling;
+  - 481 characters saved, identical after a refresh, and shown in full in the List view.
+
+#### 2. Additional design improvement: welcome animation
+
+This was **Carson's design request, not a finding from the first-run check.** The first version (a fade of about one
+second) was revised after Carson found that it "feels abrupt and disappears before the text can be comfortably read."
+
+**As built:**
+- **Display:** "Welcome to Reading *Map*" in the existing serif, ink on the paper background with an oxblood *Map*,
+  covering the page from the first frame.
+- **Timing:** the text fades in over 0.5 s while rising 6px, holds for 1.5 s, and fades out over 0.5 s. Then the paper
+  fades (0.3 s) to reveal the page, about **2.8 s** in total, with gentle easing and no bounce, zoom or extra decoration.
+- **Once per browser:** remembered under `reading-map:welcome`. Anyone who already has saved data or any tour progress,
+  including the earlier single-page tour, never sees it.
+- **Dismissal:** possible at any time with a click, Escape, Enter or Space. The text fades first (0.12 s), then the
+  paper (0.25 s), starting from wherever the animation is.
+- **Reduced motion:** with reduced motion preferred, it's skipped (and recorded as seen) and the home tour opens directly.
+- **Into the tour:** the home tour starts only after the welcome has fully closed, with the same steps and Skip behavior.
+
+**Two tour fixes found while reviewing this transition:** both were in the tour itself before the welcome existed, and
+both affect the start of every tour chapter.
+- **Spotlight slide:** the spotlight slid in from full-screen instead of appearing in place. It's now a separate element
+  from the full-screen dim.
+- **Phone layout:** on phones, the tour's first frame laid the panel out as on desktop, which scrolled the page and left
+  the spotlight trailing. The tour now starts from the real window size.
+
+**Checked locally at 1440 × 900 and 390 × 844:**
+- **Focused script, 38/38 at each size** (this run also includes the writing-space checks above):
+  - a fresh browser shows the welcome for about 2.8 s and records it;
+  - the home tour opens only after the welcome closes, never together, with focus on Next;
+  - Next, Back and Skip still work;
+  - no welcome after a refresh, or after closing and reopening the browser;
+  - the text, font, colors and animation timing are as designed;
+  - a click or Escape during the welcome closes it within 0.5 s, and the tour follows without being skipped;
+  - with reduced motion, there's no welcome and the tour opens directly;
+  - no welcome for people with saved maps, with tour progress only, with the earlier tour key, or with saved data whose
+    maps were all deleted.
+- **Repeat runs:** 6 fresh-browser runs (3 per size) each showed the welcome for 2.82–2.83 s, with the tour opening as
+  it closed, no overlap, and focus on Next.
+- **Visual review:** I reviewed the following by eye at both sizes:
+  - frames at set points in the animation;
+  - real-time screenshot sequences of the natural ending and of an early click, through to the open tour.
+
+  After the fixes, no text shows over the page, the spotlight appears in place, and the page doesn't jump on phone.
+
+**Pending for both changes:**
+- a recheck on the deployed site;
+- a production build (`npm run build`) after these changes;
+- testing on physical devices or with assistive technology.

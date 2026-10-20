@@ -280,7 +280,7 @@ export function ConnectReadingForm({
           onChange={(value) => change("note", value)}
           error={errors.note}
           required={!editingOriginal}
-          rows={2}
+          rows={4}
           counterMax={LIMITS.note}
           textareaRef={noteRef}
         />
