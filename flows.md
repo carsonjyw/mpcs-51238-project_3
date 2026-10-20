@@ -28,13 +28,13 @@ flowchart TD
     LOAD --> HAS{Any saved threads?}
 
     %% First visit
-    HAS -- No --> FV["<b>First visit · /</b><br/>Start form: what are you reading?<br/>what question did it raise?"]
-    FV -. optional .-> EX["Expand read-only example thread<br/>(map + list, not saved)"]
+    HAS -- No --> FV["<b>First visit · /</b><br/>Ask a question → Connect readings → Save your next step<br/>Start form: title + question required,<br/>author/link under Add details (optional)"]
+    FV -. optional .-> EX["See an example exploration<br/>(read-only map + list, not saved)"]
     EX -. collapse .-> FV
     FV -- Submit --> V1{Title and question valid?}
     V1 -- No --> E1["Errors next to each field<br/>typed text kept"]
     E1 --> FV
-    V1 -- Yes --> THREAD
+    V1 -- "Yes: open the user's first map" --> THREAD
 
     %% Returning
     HAS -- Yes --> RV["<b>Returning view · /</b><br/>Welcome back + Continue card<br/>(question, next step, last reading, last active)<br/>and other open threads"]
@@ -58,7 +58,7 @@ flowchart TD
     DELQ -- No --> THREAD
 
     %% Main task: connect
-    THREAD -- Connect a reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship · what it contributes<br/>editing the original reading: details only,<br/>relationship stays Raised this question"]
+    THREAD -- Connect another reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship, each option explained · what it contributes<br/>editing the original reading: details only,<br/>relationship stays Raised this question"]
     CONNECT -- Submit --> V2{Valid?}
     V2 -- No --> E2["Errors next to each field<br/>typed text kept<br/>next step unchanged"]
     E2 --> CONNECT
@@ -87,16 +87,20 @@ flowchart TD
 
 ## 1. First visit (`/`, nothing saved)
 
-1. Shared header + a one-line explanation: *Follow a question across what you read.*
-2. **Start form** (one column):
-   - **What are you reading?** — Title (required), Type: Book / Article (default Book), Author (optional), Link
-     (optional).
-   - **What question did it raise?** (required) — with chips that prefill the field: "What is the author arguing?",
-     "Do I agree with this?", "How does this connect to…?".
-3. **See an example thread** — an expandable section (`<details>`-style disclosure), collapsed by default. Shows Maya's
-   thread in the same read-only map and list. Labeled *Example — not saved*. No edit actions.
-4. On valid submit → the new thread page, which immediately shows the map with the question at the center and the first
-   reading connected to it, plus two clear prompts: **Connect another reading** and **Save a next step**.
+No gate before the start form: no tour, survey, account, or setup step (R1).
+
+1. Shared header + one line of verbs that teaches the model: *Ask a question → Connect readings → Save your next step*
+   (R3). Text only, no tour.
+2. **Start form** (one column). Only two required fields are visible (R2):
+   - **What are you reading?** Title (required). Type: Book / Article, default Book.
+   - **What question did it raise?** (required), with starter chips that prefill the field: "What is the author
+     arguing?", "Do I agree with this?", "How does this connect to…?". No shuffle button (R4 deferred).
+   - **Add details (optional)**: a collapsed disclosure holding Author and Link.
+3. **See an example exploration**: an expandable section below the form, collapsed by default (R5). Shows Maya's thread
+   read-only in the same map and list, with all three relationship types. Labeled *Example, not saved*. No edit actions.
+4. On valid submit → the user's own new thread page (R6). The map shows the question at the center with their reading
+   attached. The primary action is **Connect another reading**, which is deliberately neutral. **Save a next step** is
+   the secondary action. There is no placeholder node on the map (R7 deferred).
 
 ## 2. Main task — connect a reading (`/threads/[id]/connect`)
 
@@ -112,6 +116,11 @@ Fields, one column:
 | What it contributes | required, 1–500 characters | "Say what this reading adds or challenges — one sentence is enough." |
 
 - The question is shown at the top of the form as context.
+- The relationship and the contribution note are both required parts of connecting (R8). Each relationship option
+  explains itself under its label:
+  - **Supports**: backs up, confirms, or gives evidence for an idea in your question.
+  - **Challenges**: questions, contradicts, or complicates your current thinking.
+  - **Adds a new perspective**: looks at the question from a different angle, field, or experience.
 - Duplicate title already in this thread → "This reading is already in this thread. Edit its note instead." with a link
   that opens it for editing.
 - **Edit mode** — opened from the detail panel (`/threads/[id]/connect?reading=<id>`): same form, prefilled, button reads
@@ -152,14 +161,16 @@ Shown on `/threads/[id]` (and read-only in the home-page example).
   circle around it, in the order they were added, starting at the top. The first reading (the one that raised the
   question) is labeled **Raised this question**. If a thread grows past about 8 readings, they continue on a second, outer
   ring.
-- **Edges:** each line is labeled with its relationship in text. Relationship is also shown by line style (Supports =
-  solid, Challenges = dashed, Adds a new perspective = dotted) so it never relies on color alone.
+- **Edges:** each line shows its relationship label in text (Supports, Challenges, Adds a new perspective, or Raised this
+  question). Relationship is also shown by line style (Supports = solid, Challenges = dashed, Adds a new perspective =
+  dotted) so it never relies on color alone. Nodes show the reading title only. **Full contribution notes appear in the
+  detail panel and the list view, not on the map.**
 - **Selecting a reading** (click, or Tab to it and press Enter/Space) opens a detail panel next to or below the map:
   title, type, author/link, relationship, contribution note, **Edit** and **Remove**. For the original reading the panel
   shows **Raised this question** and its optional notes, with **Edit** only (no Remove). Escape closes the panel and
   returns focus to the node.
 - **Map / List toggle:** the list view shows the same content as a timeline (question, then each reading with its
-  relationship badge, note, and the same actions). It is the accessible alternative and works with screen readers and
+  relationship label, full contribution note, and the same actions). It is the accessible alternative and works with screen readers and
   keyboard alone. The last choice is remembered on this device.
 - The SVG scales to the screen width; on narrow screens the detail panel sits below the map.
 - Out of scope: dragging, manual node positions, a global graph across threads.
@@ -223,7 +234,7 @@ Confirmations use an accessible dialog: focus moves into it, Escape cancels, and
 | State | What the user sees |
 |---|---|
 | No saved threads | First-visit start form (never a blank screen) |
-| Thread with only the first reading | Map shows question + one reading; prompt card: "Connect a reading that supports or challenges this." |
+| Thread with only the original reading | Map shows question + one reading; primary action **Connect another reading** |
 | No next step | "What will you read or think about next?" with **Save a next step** |
 | No other threads (returning) | "Start another thread" link instead of an empty list |
 | Loading saved data | Brief loading placeholder (prevents a first-visit flash for returning users) |
@@ -243,7 +254,7 @@ Confirmations use an accessible dialog: focus moves into it, Escape cancels, and
 | `/threads/[id]/next-step` | Save, change, or mark done the one current next step |
 
 - **Shared header** on every page: **Reading Map** (home) and **+ New thread**, with `aria-current` on the current page.
-- **Breadcrumbs** on thread subpages: *Home › How does memory shape identity? › Connect a reading*.
+- **Breadcrumbs** on thread subpages: *Home › How does memory shape identity? › Connect another reading*.
 
 **Cancel and return paths (same rule on every form):**
 
@@ -255,7 +266,7 @@ Confirmations use an accessible dialog: focus moves into it, Escape cancels, and
 
 | Form | Entered from | Cancel goes to |
 |---|---|---|
-| `/threads/[id]/connect` | Thread page (**Connect a reading**, or **Edit** on a reading) | Thread |
+| `/threads/[id]/connect` | Thread page (**Connect another reading**, or **Edit** on a reading) | Thread |
 | `/threads/[id]/connect?mode=next-step` | Home Continue card (**I did this, add what I found**) | Home |
 | `/threads/[id]/next-step` | Thread page | Thread |
 | `/threads/[id]/next-step` | Home Continue card (**Change next step** / **Save a next step**) | Home |
@@ -294,5 +305,6 @@ Map/List preference is stored separately. Example content is not stored.
 with a relationship and contribution note, the per-thread map with its list alternative, one current next step, the
 returning view, editing and deletion, and essential validation and storage states.
 
-**Deferred:** "Raises a new question" relationship, next-step history, a global reading library, reusing readings across
+**Deferred:** a "Try another" question shuffle (R4), a placeholder "Your next reading" map node (R7), the "Raises a new
+question" relationship, next-step history, a global reading library, reusing readings across
 threads, thread statuses, search, export/import, a global cross-thread graph, dragging or manual node positions.

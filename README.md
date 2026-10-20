@@ -27,13 +27,13 @@ flowchart TD
     LOAD --> HAS{Any saved threads?}
 
     %% First visit
-    HAS -- No --> FV["<b>First visit · /</b><br/>Start form: what are you reading?<br/>what question did it raise?"]
-    FV -. optional .-> EX["Expand read-only example thread<br/>(map + list, not saved)"]
+    HAS -- No --> FV["<b>First visit · /</b><br/>Ask a question → Connect readings → Save your next step<br/>Start form: title + question required,<br/>author/link under Add details (optional)"]
+    FV -. optional .-> EX["See an example exploration<br/>(read-only map + list, not saved)"]
     EX -. collapse .-> FV
     FV -- Submit --> V1{Title and question valid?}
     V1 -- No --> E1["Errors next to each field<br/>typed text kept"]
     E1 --> FV
-    V1 -- Yes --> THREAD
+    V1 -- "Yes: open the user's first map" --> THREAD
 
     %% Returning
     HAS -- Yes --> RV["<b>Returning view · /</b><br/>Welcome back + Continue card<br/>(question, next step, last reading, last active)<br/>and other open threads"]
@@ -57,7 +57,7 @@ flowchart TD
     DELQ -- No --> THREAD
 
     %% Main task: connect
-    THREAD -- Connect a reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship · what it contributes<br/>editing the original reading: details only,<br/>relationship stays Raised this question"]
+    THREAD -- Connect another reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship, each option explained · what it contributes<br/>editing the original reading: details only,<br/>relationship stays Raised this question"]
     CONNECT -- Submit --> V2{Valid?}
     V2 -- No --> E2["Errors next to each field<br/>typed text kept<br/>next step unchanged"]
     E2 --> CONNECT
@@ -81,6 +81,28 @@ flowchart TD
     %% Coming back later
     THREAD -. "leave · come back later" .-> OPEN
 ```
+
+## Onboarding research and decisions
+
+We studied how three comparable tools welcome new users: **The StoryGraph** (a reading tracker), **Heptabase** (a visual
+whiteboard for learning) and **Are.na** (collecting and connecting saved content). The research used public pages and
+documentation only, so screens behind sign-up were not observed. Full findings, evidence labels, and sources are in
+[onboarding-research.md](onboarding-research.md).
+
+**Adopted for the first visit:**
+- No gate: the home page opens directly on the start form, with no tour, survey, or setup step.
+- Only the title and the question are required. Author and link sit under "Add details (optional)".
+- One line of verbs teaches the model: *Ask a question → Connect readings → Save your next step.*
+- A collapsed, read-only **"See an example exploration"** below the form, kept separate from saved data.
+- The first save opens the user's own map, with a neutral primary action, **Connect another reading**. The connect form
+  explains all three relationships.
+- A relationship and a contribution note are required when connecting. Relationship labels appear on map connections,
+  and full notes appear in the detail panel and list view.
+- A two-item header, with no videos or separate help pages.
+
+**Deferred:**
+- A "Try another" button that cycles example questions. The existing question starters stay.
+- A placeholder "Your next reading" node on new maps. The **Connect another reading** action is used instead.
 
 ## First-run check
 
