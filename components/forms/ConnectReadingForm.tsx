@@ -41,7 +41,6 @@ const relationshipOptions = CONNECTION_RELATIONSHIPS.map((value) => ({
   value,
   label: RELATIONSHIPS[value].label,
   description: RELATIONSHIPS[value].description,
-  detail: RELATIONSHIPS[value].example,
   marker: <LineSample relationship={value} />,
 }));
 
@@ -120,12 +119,16 @@ export function ConnectReadingForm({
       case "url":
         return validateUrl(current.url);
       case "relationship":
-        return editingOriginal || current.relationship ? undefined : "Choose how this reading relates to your question.";
+        return editingOriginal || current.relationship
+          ? undefined
+          : "Choose how this reading relates to your question.";
       case "note":
         return editingOriginal ? validateOptionalNote(current.note) : validateContribution(current.note);
       case "newStep":
         if (!nextStepMode || current.stepChoice !== "replace") return undefined;
-        return current.newStep.trim() ? validateNextStep(current.newStep) : "Write your new next step, or choose 'Mark my next step done'.";
+        return current.newStep.trim()
+          ? validateNextStep(current.newStep)
+          : "Write your new next step, or choose 'Mark my next step done'.";
       default:
         return undefined;
     }
@@ -171,7 +174,11 @@ export function ConnectReadingForm({
       });
       setFlash(
         thread.id,
-        saveFlash(persisted, { saved: `Updated “${title}”. Saved in this browser.`, done: `Updated “${title}”.` }, reading.id),
+        saveFlash(
+          persisted,
+          { saved: `Updated “${title}”. Saved in this browser.`, done: `Updated “${title}”.` },
+          reading.id,
+        ),
       );
     } else {
       const step: NextStepAction | undefined = nextStepMode
@@ -234,7 +241,7 @@ export function ConnectReadingForm({
         />
       </fieldset>
 
-      <div className="entry">
+      <div className="entry" data-tour="relationship">
         {editingOriginal ? (
           <div>
             <p className="text-[0.875rem] font-semibold">Relationship</p>
@@ -244,21 +251,23 @@ export function ConnectReadingForm({
             </p>
           </div>
         ) : (
-          <RadioGroup
-            legend="How does it relate to your question?"
-            hint="Choose how this reading affects what you currently think about your question."
-            name="relationship"
-            options={relationshipOptions}
-            value={values.relationship}
-            onChange={(value) => change("relationship", value)}
-            error={errors.relationship}
-            required
-            firstInputRef={relationshipRef}
-          />
+          <>
+            <RadioGroup
+              legend="How does it relate to your question?"
+              hint="Choose how this reading affects what you currently think about your question."
+              name="relationship"
+              options={relationshipOptions}
+              value={values.relationship}
+              onChange={(value) => change("relationship", value)}
+              error={errors.relationship}
+              required
+              firstInputRef={relationshipRef}
+            />
+          </>
         )}
       </div>
 
-      <div className="entry">
+      <div className="entry" data-tour="note">
         <TextArea
           label={editingOriginal ? "Notes" : "What does it contribute?"}
           hint={

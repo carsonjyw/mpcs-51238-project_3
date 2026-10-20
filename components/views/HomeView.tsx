@@ -11,6 +11,7 @@ import { RELATIONSHIPS } from "@/lib/relationships";
 import { useElementWidth } from "@/lib/useElementWidth";
 import type { Thread } from "@/lib/types";
 import { DocumentTitle } from "../DocumentTitle";
+import { Tour } from "../Tour";
 import { PageLoading } from "../PageStates";
 import { StartThreadForm, type StartFormHandle, type StartValues } from "../forms/StartThreadForm";
 import { relationshipColor, RelationshipLabel } from "../thread/RelationshipLabel";
@@ -44,6 +45,7 @@ function FirstVisit({ latest }: { latest?: Thread }) {
   const [values, setValues] = useState<StartValues | null>(null);
   const formRef = useRef<StartFormHandle>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const previewId = useId();
   // For example "Thread deleted." after deleting a thread.
   const flash = useFlash("home");
@@ -56,8 +58,10 @@ function FirstVisit({ latest }: { latest?: Thread }) {
   );
 
   return (
-    <div className="grid items-start gap-9 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-[72px]">
+    <div ref={rootRef} className="grid items-start gap-9 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-[72px]">
       <DocumentTitle title="What are you reading?" />
+      {/* Tour chapter 1, only on the first visit in this browser. */}
+      {latest ? null : <Tour chapter="home" root={rootRef} fallbackFocus={() => titleRef.current} />}
       <section>
         <Notice tone={flash?.tone} quiet className="mb-6">
           {flash?.message}

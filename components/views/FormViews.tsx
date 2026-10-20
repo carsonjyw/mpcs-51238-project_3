@@ -1,11 +1,14 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
+import { useRef } from "react";
+import type { Chapter } from "@/lib/tour";
 import { parseReturnTo, returnHref, threadPath } from "@/lib/navigation";
 import { useStore } from "@/lib/store";
 import { getThread, isOriginal } from "@/lib/threads";
 import { Breadcrumbs } from "../Breadcrumbs";
 import { DocumentTitle } from "../DocumentTitle";
+import { Tour } from "../Tour";
 import { NotFoundMessage, PageLoading, ThreadNotFound } from "../PageStates";
 import { ConnectReadingForm } from "../forms/ConnectReadingForm";
 import { NextStepForm } from "../forms/NextStepForm";
@@ -15,16 +18,27 @@ function FormPage({
   crumbs,
   title,
   intro,
+  tour,
   children,
 }: {
   crumbs: { label: string; href?: string }[];
   title: string;
   intro?: React.ReactNode;
+  /** Tour chapter for this page, shown on its first visit. */
+  tour?: Chapter;
   children: React.ReactNode;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="max-w-[38rem]">
+    <div ref={rootRef} className="max-w-[38rem]">
       <DocumentTitle title={title} />
+      {tour ? (
+        <Tour
+          chapter={tour}
+          root={rootRef}
+          fallbackFocus={() => rootRef.current?.querySelector<HTMLElement>("input, textarea") ?? null}
+        />
+      ) : null}
       <Breadcrumbs items={crumbs} />
       <h1 className="mt-5 text-[2.125rem] leading-[1.05] lg:text-[2.75rem]">{title}</h1>
       {intro ? <div className="mt-2 leading-relaxed text-ink-muted">{intro}</div> : null}
@@ -84,6 +98,7 @@ export function ConnectView() {
     <FormPage
       crumbs={[{ label: "Home", href: "/" }, { label: thread.question, href: threadPath(thread.id) }, { label: title }]}
       title={title}
+      tour={reading ? undefined : "connect"}
       intro={
         <>
           Your question: <span className="font-serif text-[1.1875rem] text-ink">{thread.question}</span>
@@ -119,6 +134,7 @@ export function NextStepView() {
     <FormPage
       crumbs={[{ label: "Home", href: "/" }, { label: thread.question, href: threadPath(thread.id) }, { label: "Next step" }]}
       title={title}
+      tour="nextStep"
       intro={
         <>
           Your question: <span className="font-serif text-[1.1875rem] text-ink">{thread.question}</span>

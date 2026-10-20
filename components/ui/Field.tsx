@@ -181,8 +181,6 @@ export interface RadioOption<V extends string> {
   value: V;
   label: string;
   description?: string;
-  /** A concrete example, shown under the description. */
-  detail?: string;
   /** Optional decoration shown before the label, such as a line-style sample. */
   marker?: ReactNode;
 }
@@ -286,21 +284,16 @@ export function RadioGroup<V extends string>({
                 checked={checked}
                 onChange={() => onChange(option.value)}
                 className="mt-1 size-4 shrink-0 accent-ink"
-                aria-describedby={option.description || option.detail ? `${optionId}-description` : undefined}
+                aria-describedby={option.description ? `${optionId}-description` : undefined}
               />
               <span>
                 <span className={`flex items-center gap-2 font-medium ${checked ? "font-semibold" : ""}`}>
                   {option.marker}
                   {option.label}
                 </span>
-                {option.description || option.detail ? (
+                {option.description ? (
                   <span id={`${optionId}-description`} className="block text-[0.875rem] text-ink-muted">
                     {option.description}
-                    {option.detail ? (
-                      <span className="mt-0.5 block font-serif text-[1rem] italic leading-snug">
-                        e.g. {option.detail}
-                      </span>
-                    ) : null}
                   </span>
                 ) : null}
               </span>

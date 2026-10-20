@@ -108,9 +108,11 @@ export function ThreadMap({
       highlightId === reading.id ? "fade-in" : ""
     }`;
     const spine = { borderLeftColor: relationshipColor[reading.relationship], ...style };
+    // The reading that raised the question is a target for the first-use tour.
+    const tour = reading.relationship === "raised" ? "reading-node" : undefined;
     if (!interactive) {
       return (
-        <div key={reading.id} className={classes} style={spine}>
+        <div key={reading.id} className={classes} style={spine} data-tour={tour}>
           {content}
         </div>
       );
@@ -125,6 +127,7 @@ export function ThreadMap({
         onClick={() => onSelect?.(reading.id)}
         className={`${classes} cursor-pointer hover:bg-white`}
         style={spine}
+        data-tour={tour}
       >
         {content}
       </button>
@@ -153,7 +156,7 @@ export function ThreadMap({
         <div className="link" aria-hidden="true">
           <span className="annot">{RELATIONSHIPS[reading.relationship].label.toLowerCase()}</span>
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1" data-tour="question-node">
           <p className="mono-label">The question</p>
           <p className={`quote-q mt-3 ${size}`}>{thread.question}</p>
         </div>
@@ -179,6 +182,7 @@ export function ThreadMap({
       <div
         className="flex flex-col justify-center border border-ink bg-paper-raised px-4 py-3 text-center"
         style={style}
+        data-tour="question-node"
       >
         <span className="mono-label">The question</span>
         <span className={`quote-q mt-1.5 text-[1.375rem] ${clamp ? "line-clamp-4" : ""}`}>{thread.question}</span>

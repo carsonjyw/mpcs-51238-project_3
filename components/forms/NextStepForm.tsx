@@ -48,19 +48,21 @@ export function NextStepForm({ thread, cancelHref }: { thread: Thread; cancelHre
 
   return (
     <form noValidate onSubmit={submit} className="space-y-6 border-t border-line pt-5">
-      <TextField
-        label="What will you read or think about next?"
-        hint="One concrete thing, like 'Read chapter 3' or 'Find an article on…'."
-        value={text}
-        onChange={(value) => {
-          setText(value);
-          if (error) setError(validateNextStep(value));
-        }}
-        error={error}
-        required
-        counterMax={LIMITS.nextStep}
-        inputRef={fieldRef}
-      />
+      <div data-tour="next-step">
+        <TextField
+          label="What will you read or think about next?"
+          hint="One concrete thing, like 'Read chapter 3' or 'Find an article on…'."
+          value={text}
+          onChange={(value) => {
+            setText(value);
+            if (error) setError(validateNextStep(value));
+          }}
+          error={error}
+          required
+          counterMax={LIMITS.nextStep}
+          inputRef={fieldRef}
+        />
+      </div>
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit">
           Save next step <span aria-hidden="true">→</span>

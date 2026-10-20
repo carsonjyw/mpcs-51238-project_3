@@ -12,6 +12,7 @@ import type { Thread } from "@/lib/types";
 import { LIMITS, validateQuestion } from "@/lib/validation";
 import { Breadcrumbs } from "../Breadcrumbs";
 import { DocumentTitle } from "../DocumentTitle";
+import { Tour } from "../Tour";
 import { PageLoading, ThreadNotFound } from "../PageStates";
 import { ThreadExplorer } from "../thread/ThreadExplorer";
 import { Button, ButtonLink } from "../ui/Button";
@@ -53,6 +54,7 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const questionFieldRef = useRef<HTMLTextAreaElement>(null);
   const editButtonRef = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const nextStepId = useId();
 
   // After a form saves and lands here, move focus to the heading so the result is announced in context.
@@ -115,8 +117,10 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
   }
 
   return (
-    <div>
+    <div ref={rootRef}>
       <DocumentTitle title={thread.question} />
+      {/* Tour chapter 2, on the first visit to a thread page. */}
+      <Tour chapter="thread" root={rootRef} fallbackFocus={() => headingRef.current} />
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: thread.question }]} />
         <Notice tone={notice?.tone} quiet>
@@ -136,7 +140,11 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <ButtonLink href={connectPath(thread.id, { returnTo: "thread" })} className={compactOnPhone}>
+          <ButtonLink
+            href={connectPath(thread.id, { returnTo: "thread" })}
+            className={compactOnPhone}
+            data-tour="connect"
+          >
             Connect another reading <span aria-hidden="true">→</span>
           </ButtonLink>
           <Button
@@ -208,6 +216,7 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
           panelOnDemand
         />
       </div>
+
 
       <div className="mt-12 border-t border-line pt-5">
         <Button variant="danger" className="min-h-10 px-5 text-[0.875rem]" onClick={() => setConfirmDelete(true)}>

@@ -147,7 +147,7 @@ export function StartThreadForm({
   return (
     <form noValidate onSubmit={submit}>
       {/* Two numbered journal entries, each on a writing line. */}
-      <div className="entry">
+      <div className="entry" data-tour="reading">
         <ReadingDetailsFields
           values={values}
           errors={errors}
@@ -163,7 +163,7 @@ export function StartThreadForm({
         />
       </div>
 
-      <div className="entry">
+      <div className="entry" data-tour="question">
         <TextArea
           label="The question it raised"
           number="02"
