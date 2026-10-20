@@ -35,8 +35,9 @@ design was then worked out step by step through discussion and revision. How the
 - **Growing maps:** a List view agreed in Step 2, and compact map layouts added in Step 5.
 - **Returning:** a saved next step (Step 2) and a Continue card with a list of every map (Step 6).
 
-**Who it's for:** people who read books and articles and want to follow the questions they raise. Users follow a question across books and articles, connect readings that add to or challenge their thinking, and save
-a next step.
+**Who it's for:** people who read books and articles and want to follow the questions they raise. In Carson's words,
+"users follow a question across books and articles, connect readings that add to or challenge their thinking, and save
+a next step."
 
 **The problem:** the original idea was "a tool that connects things people read with the questions and ideas they want to
 explore next", where, on returning, people "can see unfinished threads and choose where to continue." Without it,
@@ -189,7 +190,7 @@ tour was later made a true modal in Step 7.
 ### Local usability test
 
 Another agent tested the running app locally (http://localhost:3102) on October 20, 2026, at 1440 × 900 and
-390 × 844. **This was a local test, not the deployed first-run check, which is still pending (see below).**
+390 × 844. **This was a local test, not the deployed first-run check, which is recorded in [First-run check](#first-run-check).**
 
 **Passed and kept as is:** no account or setup gate on the first visit; inline errors that keep typed text and focus the
 first invalid field; connecting and editing readings (the original reading keeps its fixed relationship and has no
@@ -368,4 +369,70 @@ Three pairs measure under 3:1 but don't carry information on their own:
 
 ## First-run check
 
-_Pending: to be run on the deployed Vercel site after deployment._
+| | |
+|---|---|
+| **Deployed URL** | https://mpcs-51238-project-3.vercel.app/ |
+| **Date** | October 20, 2026 |
+| **Tester** | Claude (AI assistant), acting as a new user |
+| **Browser** | Headless Chrome with a new, empty profile; 1440 × 900, then 390 × 844 for the return visit |
+| **Goal** | Start an exploration from a book, capture the question it raised, connect two related readings with contribution notes, and save a next step. Then close and reopen the site, find the saved work, and continue it. |
+
+### What was attempted
+
+1. **First visit.** The home page opened straight on the form, with an example map beside it and a 2-step tour. I followed
+   the tour, then entered *The Sense of an Ending* (book, Julian Barnes) and the question "Can we trust our own memories of
+   the people we used to know?". The preview updated as I typed. **Begin the map** opened "Your first map", with a
+   "Saved in this browser." confirmation and a 3-step tour of the map.
+2. **Main task.** I connected two readings with notes:
+   - an article, "Why your memories change every time you recall them", as **Supports**;
+   - *Speak, Memory* (book, Vladimir Nabokov) as **Challenges**.
+
+   Each connect page opened with a 2-step tour. I submitted the first form with only a title on purpose: it showed clear
+   errors for the relationship and the note and kept the title. After each save, the map showed the new reading, opened
+   its note beside the map, and confirmed "Connected “…”. Saved in this browser."
+   I then saved the next step "Read the Bartlett 'War of the Ghosts' study…", after a 1-step tour.
+3. **Return.** I closed the browser completely, relaunched it on the same profile, and opened the home URL. Home showed
+   "Pick up where you left off": a Continue card with the question, latest reading and next step, and **All your maps**.
+4. **Continue.** From the card, I connected *Remembering* (Bartlett) as **Adds a new perspective** and replaced the next
+   step with "Find a critique of the 'reconstructive memory' idea". Both saves were confirmed. The phone layout of the
+   returning home and the map had no sideways scrolling, and readings stack under the question.
+
+**Result:** the goal was completed. **No functional bugs were found.** Twice, text didn't land in a field and a click
+didn't register, but both were caused by the test driver (typing before focusing a field, clicking a button that had
+just moved), not the app. Each time, the app's validation caught the missing text and kept the other input.
+
+### Observations
+
+**Worked well:** no account or setup step; the example and live preview; required fields kept to a minimum; clear
+inline errors that keep input; a confirmation after every save; distinct relationship labels and line styles with a
+legend; the returning home leading with the saved work and next step.
+
+**Usability findings, with suggested fixes by priority:**
+
+| Priority | Finding | Suggested fix |
+|---|---|---|
+| High | **The next step and new readings aren't connected.** I came back to act on my next step and connected the reading it named, but the connect form didn't mention the step. Afterwards the step still showed the reading I had just added, and I had to change it separately. | When connecting from the Continue card (or right after any connect), show the saved next step and offer "Mark it done" / "Replace it" as part of the same save. |
+| Medium | **The tour is long:** 8 steps across 4 pages (home 2, map 3, connect 2, next step 1) before the main task feels finished. On desktop, step 1 of the map tour covers the user's own book. | Shorten it, for example to home plus the first map, with brief inline hints on the forms. Place the map-tour panel so it doesn't cover the reading. |
+| Medium | **Two names for one thing:** "+ New thread" and "Delete thread", but "Your first map", "Open map" and "All your maps". | Use one term throughout (for example "map"). |
+| Medium | **Small text fields:** the next-step field is one line, so a longer step is cut off while editing ("…changes memor"). The contribution box shows 2 lines, so a two-sentence note scrolls inside it. | Make the next step a short multi-line field, and let the note box grow or start at 3–4 lines. |
+| Low | The note field is described three ways: "What does it contribute?", "How it changes your thinking", and the error "Say what this reading adds or challenges." | Use one phrasing, for example "Say how it changes your thinking." |
+| Low | After a validation error, the page scrolls so the focused title field is at the very top and its label is off-screen. | Scroll with a margin so the label and error stay visible. |
+| Low | The live preview shows "BOOK" but not the author you entered. | Show the author in the preview, as the saved map does. |
+| Low | Cancel is an outlined button on the connect form but a text link on the next-step form. | Use the same style for both. |
+| Low | With one map, the returning home repeats it in the Continue card and the list, and shows two "+ New thread" buttons. | Hide the list, or the second button, until there are two or more maps. |
+| Low | Long titles are cut off on map cards ("…every time you…"). The full title is in the note panel and the List view. | Acceptable, or allow a third line. |
+| Low | After connecting, "Delete thread" sits where the "Connect reading" button was, so it ends up under the pointer. It asks for confirmation, so nothing is lost. | Optional: leave more space above it. |
+
+### Limitations
+
+- **Not a naive user:** the tester is the assistant that built the app, so it already knew the design. It followed only
+  the on-screen text, but its expectations weren't those of a real first-time user. A check with a real person is still
+  worth doing.
+- **Single session, automated browser:** one headless browser on one date, driven by clicks and typing and reviewed
+  through screenshots. No real phone, touch input, or assistive technology was used.
+- **Narrow phone coverage:** the first visit and main task were done on desktop; on phone only the returning home and the
+  map were checked.
+- **Simulated "later":** reopening was simulated by fully closing and relaunching the browser a few minutes later, not
+  days later.
+- **Test data:** the temporary profile and its saved data were deleted afterwards. Nothing is stored on the server; data
+  lives only in the browser.
