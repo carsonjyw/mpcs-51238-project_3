@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 type Variant = "primary" | "secondary" | "quiet" | "danger";
 
 const base =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-2 text-[0.9375rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
 
 const variants: Record<Variant, string> = {
   primary: "bg-accent text-white hover:bg-accent-hover",

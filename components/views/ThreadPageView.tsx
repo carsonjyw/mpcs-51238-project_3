@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFlash } from "@/lib/flash";
 import { useStore } from "@/lib/store";
 import { getThread } from "@/lib/threads";
@@ -22,14 +22,13 @@ export function ThreadPageView() {
   if (store.status === "loading") return <PageLoading label="Loading this thread…" />;
   const thread = getThread(store.data, id);
   if (!thread) return <ThreadNotFound />;
-  return <ThreadPage key={thread.id} thread={thread} saved={store.persistence === "saved"} />;
+  return <ThreadPage key={thread.id} thread={thread} isFirst={store.data.threads.length === 1} />;
 }
 
-function ThreadPage({ thread, saved }: { thread: Thread; saved: boolean }) {
+function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
+  // Set by the start form: "Saved in this browser." only when the write succeeded, otherwise a session-only warning.
   const notice = useFlash(thread.id);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const nextId = useId();
-  const original = thread.readings[0];
 
   // Arriving from the start form: move focus to the question so the result is announced in context.
   useEffect(() => {
@@ -37,39 +36,25 @@ function ThreadPage({ thread, saved }: { thread: Thread; saved: boolean }) {
   }, [notice]);
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <DocumentTitle title={thread.question} />
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: thread.question }]} />
-      <Notice tone={notice?.tone} className="mb-6">
-        {notice?.message}
-      </Notice>
 
+      {/* A compact heading: the question itself is the center of the map right below, so it isn't repeated here. */}
       <header>
-        <p className="text-[0.8rem] font-semibold uppercase tracking-wide text-ink-muted">Your question</p>
-        <h1 ref={headingRef} tabIndex={-1} className="mt-1 max-w-3xl text-4xl font-semibold sm:text-5xl">
-          {thread.question}
+        <h1 ref={headingRef} tabIndex={-1} className="text-[1.75rem] leading-[1.2] sm:text-[2.25rem]">
+          {isFirst ? "Your first map" : "Your map"}
         </h1>
-        <p className="mt-3 max-w-3xl text-lg text-ink-muted">
-          Your question sits at the center of your map, with{" "}
-          <span className="font-semibold text-ink">{original.title}</span> as the reading that raised it.{" "}
-          {saved
-            ? "It's saved in this browser, so it will be here when you come back."
-            : "This browser isn't saving it, so it lasts only for this session."}
+        <p className="mt-1 line-clamp-2 text-ink-muted">
+          Started from <span className="book-title text-ink">{thread.readings[0].title}</span>
         </p>
+        <Notice tone={notice?.tone} quiet className="mt-3">
+          {notice?.message}
+        </Notice>
       </header>
 
-      <section aria-labelledby={nextId} className="mt-8 rounded-xl bg-accent-soft p-5">
-        <h2 id={nextId} className="font-sans text-[0.8rem] font-semibold uppercase tracking-wide text-accent">
-          Where this can go next
-        </h2>
-        <ul className="mt-2 space-y-1.5 text-lg">
-          <li>Connect another reading that supports, challenges, or adds a new perspective to your question.</li>
-          <li>Save a next step: one thing to read or think about next.</li>
-        </ul>
-      </section>
-
-      <div className="mt-10">
-        <ThreadExplorer thread={thread} readOnly />
+      <div className="mt-6">
+        <ThreadExplorer thread={thread} readOnly quietHeading panelOnDemand />
       </div>
     </div>
   );

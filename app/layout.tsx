@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Newsreader, Source_Sans_3 } from "next/font/google";
+import { Manrope, Newsreader } from "next/font/google";
 import { Suspense } from "react";
 import { FlashRouteWatcher } from "@/components/FlashRouteWatcher";
 import { SiteHeader, SiteHeaderShell } from "@/components/SiteHeader";
 import { StorageBanner } from "@/components/StorageBanner";
 import "./globals.css";
 
+// Newsreader for the wordmark, headings, book titles and questions; Manrope for everything you read and operate.
 const newsreader = Newsreader({
   variable: "--font-newsreader",
   subsets: ["latin"],
+  style: ["normal", "italic"],
 });
 
-const sourceSans = Source_Sans_3({
-  variable: "--font-source-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${newsreader.variable} ${sourceSans.variable} antialiased`}>
+    <html lang="en" className={`${newsreader.variable} ${manrope.variable} antialiased`}>
       <body className="flex min-h-dvh flex-col">
         <a
           href="#main"
@@ -36,12 +38,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <FlashRouteWatcher />
         </Suspense>
         <StorageBanner />
-        <main id="main" tabIndex={-1} className="flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
+        <main id="main" tabIndex={-1} className="flex-1 px-4 pb-16 pt-6 sm:px-6 lg:pt-10">
           {children}
         </main>
-        <footer className="border-t border-line px-4 py-6 text-center text-sm text-ink-muted sm:px-6">
-          Reading Map keeps everything in this browser. No account needed.
-        </footer>
       </body>
     </html>
   );

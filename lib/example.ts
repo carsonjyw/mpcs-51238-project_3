@@ -52,3 +52,12 @@ export const EXAMPLE_THREAD: Thread = {
     setAt: "2026-10-18T18:30:00.000Z",
   },
 };
+
+/**
+ * The first-visit preview example: an illustrative reader question, shown only in the preview
+ * and never saved unless the person chooses to use it and creates their own map.
+ */
+export const FIRST_VISIT_EXAMPLE = {
+  title: "The Little Prince",
+  question: "What makes a place feel like home?",
+} as const;

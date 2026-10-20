@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type RefObject } from "react";
+import { useImperativeHandle, useRef, useState, type Ref, type RefObject } from "react";
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { saveFlash, setFlash } from "@/lib/flash";
@@ -21,17 +21,18 @@ import { Button, ButtonLink } from "../ui/Button";
 import { TextArea } from "../ui/Field";
 import { ReadingDetailsFields } from "./ReadingDetailsFields";
 
-type Values = ReadingDetails & { question: string };
-type Field = keyof Values;
+export type StartValues = ReadingDetails & { question: string };
+type Field = keyof StartValues;
 
-const EMPTY: Values = { title: "", type: "book", author: "", url: "", question: "" };
+/** Lets the page fill the form, for example with the preview's example. */
+export interface StartFormHandle {
+  fill: (values: Partial<StartValues>) => void;
+}
 
-const STARTERS = [
-  { label: "What is the author arguing?", text: "What is the author arguing?" },
-  { label: "Do I agree with this?", text: "Do I agree with this?" },
-  // The caret lands before the "?" so the question can be finished right away.
-  { label: "How does this connect to…?", text: "How does this connect to ?", caret: 25 },
-];
+const EMPTY: StartValues = { title: "", type: "book", author: "", url: "", question: "" };
+
+/** Complete questions; each fills the field and stays editable. */
+const STARTERS = ["What is the author arguing?", "Do I agree with this?", "What would I ask the author?"];
 
 const validators: Partial<Record<Field, (value: string) => string | undefined>> = {
   title: validateTitle,
@@ -40,7 +41,7 @@ const validators: Partial<Record<Field, (value: string) => string | undefined>> 
   question: validateQuestion,
 };
 
-function validate(values: Values): Errors<Field> {
+function validate(values: StartValues): Errors<Field> {
   return {
     title: validateTitle(values.title),
     author: validateAuthor(values.author),
@@ -49,20 +50,25 @@ function validate(values: Values): Errors<Field> {
   };
 }
 
-/** The start form: what are you reading, and what question did it raise. Used on the home page and /threads/new. */
+/** The start form: what are you reading, and what question did it raise. */
 export function StartThreadForm({
-  submitLabel = "Start exploring",
+  submitLabel = "Create my first map",
   cancelHref,
   titleRef: externalTitleRef,
+  handle,
+  onValuesChange,
 }: {
   submitLabel?: string;
   cancelHref?: string;
-  /** Lets the page move focus to the title field, for example from the example's "Start your own" button. */
+  /** Lets the page move focus to the title field. */
   titleRef?: RefObject<HTMLInputElement | null>;
+  handle?: Ref<StartFormHandle>;
+  /** Called as the person types, for a live preview. */
+  onValuesChange?: (values: StartValues) => void;
 }) {
   const router = useRouter();
   const store = useStore();
-  const [values, setValues] = useState<Values>(EMPTY);
+  const [values, setValues] = useState<StartValues>(EMPTY);
   const [errors, setErrors] = useState<Errors<Field>>({});
   const [detailsOpen, setDetailsOpen] = useState(false);
   const ownTitleRef = useRef<HTMLInputElement>(null);
@@ -71,25 +77,41 @@ export function StartThreadForm({
   const urlRef = useRef<HTMLInputElement>(null);
   const questionRef = useRef<HTMLTextAreaElement>(null);
 
+  function update(next: StartValues) {
+    setValues(next);
+    onValuesChange?.(next);
+  }
+
+  useImperativeHandle(handle, () => ({
+    fill(partial) {
+      const next = { ...values, ...partial };
+      update(next);
+      setErrors((current) => {
+        const cleared = { ...current };
+        for (const field of Object.keys(partial) as Field[]) cleared[field] = undefined;
+        return cleared;
+      });
+    },
+  }));
+
   function reset() {
-    setValues(EMPTY);
+    update(EMPTY);
     setErrors({});
     setDetailsOpen(false);
   }
 
   function change(field: Field, value: string) {
-    setValues((current) => ({ ...current, [field]: value }));
+    update({ ...values, [field]: value });
     // Once a field has an error, re-check it as the person types so the message clears when fixed.
     if (errors[field]) setErrors((current) => ({ ...current, [field]: validators[field]?.(value) }));
   }
 
-  function applyStarter(starter: (typeof STARTERS)[number]) {
-    flushSync(() => change("question", starter.text));
+  function applyStarter(text: string) {
+    flushSync(() => change("question", text));
     const field = questionRef.current;
     if (!field) return;
     field.focus();
-    const caret = starter.caret ?? starter.text.length;
-    field.setSelectionRange(caret, caret);
+    field.setSelectionRange(text.length, text.length);
   }
 
   function submit(event: React.FormEvent) {
@@ -114,10 +136,7 @@ export function StartThreadForm({
     const { thread, persisted } = createThread(values);
     setFlash(
       thread.id,
-      saveFlash(persisted, {
-        saved: "Your exploration is saved on this device.",
-        done: "Your exploration is ready.",
-      }),
+      saveFlash(persisted, { saved: "Saved in this browser.", done: "Your map is ready." }),
     );
     reset();
     router.push(threadPath(thread.id));
@@ -126,24 +145,22 @@ export function StartThreadForm({
   const savesHere = store.status === "ready" && store.persistence === "saved";
 
   return (
-    <form noValidate onSubmit={submit} className="space-y-6">
-      <fieldset className="space-y-5">
-        <legend className="mb-1 font-serif text-xl font-semibold">What are you reading?</legend>
-        <ReadingDetailsFields
-          values={values}
-          errors={errors}
-          onChange={change}
-          detailsOpen={detailsOpen}
-          onDetailsOpenChange={setDetailsOpen}
-          titleRef={titleRef}
-          authorRef={authorRef}
-          urlRef={urlRef}
-        />
-      </fieldset>
+    <form noValidate onSubmit={submit} className="space-y-5">
+      <ReadingDetailsFields
+        values={values}
+        errors={errors}
+        onChange={change}
+        detailsOpen={detailsOpen}
+        onDetailsOpenChange={setDetailsOpen}
+        titleRef={titleRef}
+        authorRef={authorRef}
+        urlRef={urlRef}
+        titleLabel="What are you reading?"
+        compact
+      />
 
       <TextArea
-        label={<span className="font-serif text-xl">What question did it raise?</span>}
-        hint="A question you want to keep exploring."
+        label="What question did it raise?"
         value={values.question}
         onChange={(value) => change("question", value)}
         error={errors.question}
@@ -153,35 +170,35 @@ export function StartThreadForm({
         textareaRef={questionRef}
       >
         {values.question.trim() === "" ? (
-          <div role="group" aria-label="Question starters" className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-[0.95rem] text-ink-muted">Try a starter:</span>
-            {STARTERS.map((starter) => (
+          <div role="group" aria-label="Question starters" className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-[0.8125rem] text-ink-muted">Or start with:</span>
+            {STARTERS.map((text) => (
               <button
-                key={starter.label}
+                key={text}
                 type="button"
-                onClick={() => applyStarter(starter)}
-                className="min-h-10 rounded-full border border-line-strong bg-paper-raised px-3 text-[0.95rem] hover:border-accent hover:bg-accent-soft"
+                onClick={() => applyStarter(text)}
+                className="min-h-9 rounded-full border border-line px-3 text-[0.875rem] text-ink hover:border-accent hover:bg-accent-soft"
               >
-                {starter.label}
+                {text}
               </button>
             ))}
           </div>
         ) : null}
       </TextArea>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pt-1">
         <Button type="submit">{submitLabel}</Button>
         {cancelHref ? (
           <ButtonLink href={cancelHref} variant="secondary" onClick={reset}>
             Cancel
           </ButtonLink>
         ) : null}
+        <p className="text-[0.8125rem] text-ink-muted">
+          {savesHere
+            ? "Stays in this browser. No account needed."
+            : "No account needed. This browser isn't allowing storage, so your map will last only for this session."}
+        </p>
       </div>
-      <p className="text-[0.95rem] text-ink-muted">
-        {savesHere
-          ? "Everything stays in this browser. No account needed."
-          : "No account needed. This browser isn't allowing storage, so your exploration will last only for this session."}
-      </p>
     </form>
   );
 }

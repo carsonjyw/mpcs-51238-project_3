@@ -57,10 +57,14 @@ export function RelationshipLabel({
   );
 }
 
-export function MapLegend() {
+const LEGEND_ORDER: Relationship[] = ["supports", "challenges", "perspective", "raised"];
+
+/** Explains only the line styles that appear on this map. */
+export function MapLegend({ relationships }: { relationships: Relationship[] }) {
+  const shown = LEGEND_ORDER.filter((relationship) => relationships.includes(relationship));
   return (
     <ul aria-label="How connections are drawn" className="flex flex-wrap gap-x-5 gap-y-2 text-[0.9rem] text-ink-muted">
-      {(["supports", "challenges", "perspective", "raised"] as const).map((relationship) => (
+      {shown.map((relationship) => (
         <li key={relationship} className="flex items-center gap-2">
           <LineSample relationship={relationship} />
           {RELATIONSHIPS[relationship].label}

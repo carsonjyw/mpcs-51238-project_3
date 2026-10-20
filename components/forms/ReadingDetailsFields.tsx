@@ -24,6 +24,7 @@ export function ReadingDetailsFields({
   authorRef,
   urlRef,
   titleLabel = "Title",
+  compact = false,
 }: {
   values: ReadingDetails;
   errors: DetailsErrors;
@@ -34,9 +35,11 @@ export function ReadingDetailsFields({
   authorRef?: Ref<HTMLInputElement>;
   urlRef?: Ref<HTMLInputElement>;
   titleLabel?: string;
+  /** First-visit layout: compact type pills and a one-line details toggle. */
+  compact?: boolean;
 }) {
   return (
-    <div className="space-y-5">
+    <div className={compact ? "space-y-4" : "space-y-5"}>
       <TextField
         label={titleLabel}
         value={values.title}
@@ -53,9 +56,15 @@ export function ReadingDetailsFields({
         onChange={(value) => onChange("type", value)}
         required
         inline
+        compact={compact}
       />
-      <Disclosure summary="Add details (optional)" caption="Author and link" open={detailsOpen} onOpenChange={onDetailsOpenChange}>
-        <div className="mt-3 space-y-5 border-l-2 border-line pl-4">
+      <Disclosure
+        summary={compact ? "Add author or link (optional)" : "Add details (optional)"}
+        caption={compact ? undefined : "Author and link"}
+        open={detailsOpen}
+        onOpenChange={onDetailsOpenChange}
+      >
+        <div className="mt-2 space-y-4 border-l border-line pl-4">
           <TextField
             label="Author"
             value={values.author}

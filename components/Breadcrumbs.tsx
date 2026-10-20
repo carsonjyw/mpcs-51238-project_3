@@ -8,7 +8,7 @@ export interface Crumb {
 /** Home › Thread question › Current page. The last crumb is the current page. */
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
-    <nav aria-label="Breadcrumb" className="mb-6 text-[0.95rem]">
+    <nav aria-label="Breadcrumb" className="mb-6 text-[0.875rem]">
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-muted">
         {items.map((item, index) => {
           const last = index === items.length - 1;

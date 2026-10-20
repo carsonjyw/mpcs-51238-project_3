@@ -12,7 +12,7 @@ function controlClasses(invalid: boolean) {
 export function FieldError({ id, children }: { id: string; children?: ReactNode }) {
   if (!children) return null;
   return (
-    <p id={id} className="mt-1.5 flex gap-1.5 text-[0.95rem] font-semibold text-danger">
+    <p id={id} className="mt-1.5 flex gap-1.5 text-[0.875rem] font-semibold text-danger">
       <span aria-hidden="true">!</span>
       <span>{children}</span>
     </p>
@@ -21,17 +21,19 @@ export function FieldError({ id, children }: { id: string; children?: ReactNode 
 
 function Label({ htmlFor, required, children }: { htmlFor: string; required?: boolean; children: ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1.5 block font-semibold text-ink">
+    <label htmlFor={htmlFor} className="mb-1.5 block text-[0.9375rem] font-semibold text-ink">
       {children}
       {required ? null : <span className="font-normal text-ink-muted"> (optional)</span>}
     </label>
   );
 }
 
+/** Appears only near the limit, so it doesn't add noise to short entries. */
 function Counter({ length, max }: { length: number; max: number }) {
   const over = length > max;
+  if (length < max * 0.8) return null;
   return (
-    <p className={`mt-1 text-right text-sm ${over ? "font-semibold text-danger" : "text-ink-muted"}`}>
+    <p className={`mt-1 text-right text-[0.8125rem] ${over ? "font-semibold text-danger" : "text-ink-muted"}`}>
       {length} / {max}
     </p>
   );
@@ -80,7 +82,7 @@ export function TextField({
         {label}
       </Label>
       {hint ? (
-        <p id={hintId} className="-mt-0.5 mb-1.5 text-[0.95rem] text-ink-muted">
+        <p id={hintId} className="-mt-0.5 mb-1.5 text-[0.875rem] text-ink-muted">
           {hint}
         </p>
       ) : null}
@@ -129,7 +131,7 @@ export function TextArea({
         {label}
       </Label>
       {hint ? (
-        <p id={hintId} className="-mt-0.5 mb-1.5 text-[0.95rem] text-ink-muted">
+        <p id={hintId} className="-mt-0.5 mb-1.5 text-[0.875rem] text-ink-muted">
           {hint}
         </p>
       ) : null}
@@ -168,6 +170,7 @@ export function RadioGroup<V extends string>({
   error,
   required,
   inline,
+  compact,
   firstInputRef,
 }: {
   legend: ReactNode;
@@ -178,13 +181,15 @@ export function RadioGroup<V extends string>({
   error?: ReactNode;
   required?: boolean;
   inline?: boolean;
+  /** Small pills with a small legend, for secondary choices such as reading type. */
+  compact?: boolean;
   firstInputRef?: Ref<HTMLInputElement>;
 }) {
   const id = useId();
   const errorId = `${id}-error`;
   return (
     <fieldset aria-describedby={error ? errorId : undefined}>
-      <legend className="mb-2 font-semibold text-ink">
+      <legend className={compact ? "mb-1.5 text-[0.875rem] text-ink-muted" : "mb-2 text-[0.9375rem] font-semibold text-ink"}>
         {legend}
         {required ? null : <span className="font-normal text-ink-muted"> (optional)</span>}
       </legend>
@@ -196,7 +201,7 @@ export function RadioGroup<V extends string>({
             <label
               key={option.value}
               htmlFor={optionId}
-              className={`flex cursor-pointer gap-3 rounded-lg border px-3 py-2.5 ${
+              className={`flex cursor-pointer rounded-lg border ${compact ? "items-center gap-2 px-3 py-1.5 text-[0.9375rem]" : "gap-3 px-3 py-2.5"} ${
                 checked ? "border-accent bg-accent-soft" : "border-line bg-paper-raised hover:border-line-strong"
               } ${error ? "border-danger" : ""}`}
             >
@@ -208,16 +213,16 @@ export function RadioGroup<V extends string>({
                 value={option.value}
                 checked={checked}
                 onChange={() => onChange(option.value)}
-                className="mt-1 size-4 shrink-0 accent-accent"
+                className={`${compact ? "" : "mt-1"} size-4 shrink-0 accent-accent`}
                 aria-describedby={option.description ? `${optionId}-description` : undefined}
               />
               <span>
-                <span className="flex items-center gap-2 font-semibold">
+                <span className={`flex items-center gap-2 ${compact ? "" : "font-semibold"}`}>
                   {option.marker}
                   {option.label}
                 </span>
                 {option.description ? (
-                  <span id={`${optionId}-description`} className="block text-[0.95rem] text-ink-muted">
+                  <span id={`${optionId}-description`} className="block text-[0.875rem] text-ink-muted">
                     {option.description}
                   </span>
                 ) : null}

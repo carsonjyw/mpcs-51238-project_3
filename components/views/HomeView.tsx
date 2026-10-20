@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
-import { EXAMPLE_THREAD } from "@/lib/example";
+import { FIRST_VISIT_EXAMPLE } from "@/lib/example";
 import { threadPath } from "@/lib/navigation";
 import { useStore } from "@/lib/store";
 import { threadsByActivity } from "@/lib/threads";
 import type { Thread } from "@/lib/types";
 import { DocumentTitle } from "../DocumentTitle";
 import { PageLoading } from "../PageStates";
-import { StartThreadForm } from "../forms/StartThreadForm";
-import { ThreadExplorer } from "../thread/ThreadExplorer";
-import { Button } from "../ui/Button";
-import { Disclosure } from "../ui/Disclosure";
+import { StartThreadForm, type StartFormHandle, type StartValues } from "../forms/StartThreadForm";
+import { ThreadMap } from "../thread/ThreadMap";
 
 // Step 4: the home page is the first visit. The designed returning view comes in a later step
 // (full version in pending/components/views/HomeView.tsx); until then, a saved thread is linked above the form.
@@ -24,96 +22,89 @@ export function HomeView() {
   return <FirstVisit latest={latest} />;
 }
 
-const STEPS = ["Ask a question", "Connect readings", "Save your next step"];
-
-function FirstVisit({ latest }: { latest?: Thread }) {
-  const titleRef = useRef<HTMLInputElement>(null);
-  const [exampleOpen, setExampleOpen] = useState(false);
-  const formHeadingId = useId();
-
-  return (
-    <div className="mx-auto max-w-2xl">
-      <DocumentTitle title="Follow a question across what you read" />
-      {latest ? (
-        <p className="mb-6 rounded-lg border border-line bg-paper-raised px-4 py-3">
-          <span className="text-ink-muted">Your saved exploration: </span>
-          <Link href={threadPath(latest.id)} className="font-semibold text-accent underline underline-offset-4">
-            {latest.question}
-          </Link>
-        </p>
-      ) : null}
-      <h1 className="text-4xl font-semibold sm:text-5xl">Follow a question across what you read.</h1>
-      <ol aria-label="How it works" className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-lg">
-        {STEPS.map((step, index) => (
-          <li key={step} className="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="inline-flex size-7 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent"
-            >
-              {index + 1}
-            </span>
-            <span>{step}</span>
-            {index < STEPS.length - 1 ? (
-              <span aria-hidden="true" className="text-ink-muted">
-                →
-              </span>
-            ) : null}
-          </li>
-        ))}
-      </ol>
-
-      <section
-        aria-labelledby={formHeadingId}
-        className="mt-8 rounded-2xl border border-line bg-paper-raised p-5 shadow-sm sm:p-8"
-      >
-        <h2 id={formHeadingId} className="mb-6 text-2xl font-semibold sm:text-3xl">
-          {latest ? "Start another exploration" : "Start your first exploration"}
-        </h2>
-        <StartThreadForm titleRef={titleRef} />
-      </section>
-
-      <Disclosure
-        className="mt-8"
-        summary="See an example exploration"
-        caption="A read-only thread about memory and identity"
-        open={exampleOpen}
-        onOpenChange={setExampleOpen}
-      >
-        <ExampleExploration
-          onStartOwn={() => {
-            titleRef.current?.scrollIntoView({ block: "center" });
-            titleRef.current?.focus();
-          }}
-        />
-      </Disclosure>
-    </div>
-  );
+/** The map the person is about to create, built from what they've typed (never saved from here). */
+function previewThread(title: string, question: string, type: StartValues["type"]): Thread {
+  return {
+    id: "preview",
+    question,
+    createdAt: "",
+    updatedAt: "",
+    nextStep: null,
+    readings: [{ id: "preview-reading", title, type, relationship: "raised", addedAt: "" }],
+  };
 }
 
-function ExampleExploration({ onStartOwn }: { onStartOwn: () => void }) {
-  const thread = EXAMPLE_THREAD;
+function FirstVisit({ latest }: { latest?: Thread }) {
+  const [values, setValues] = useState<StartValues | null>(null);
+  const formRef = useRef<StartFormHandle>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const previewId = useId();
+
+  const typed = !!values && (values.title.trim() !== "" || values.question.trim() !== "");
+  const preview = typed
+    ? previewThread(values.title.trim() || "Your reading", values.question.trim() || "Your question", values.type)
+    : previewThread(FIRST_VISIT_EXAMPLE.title, FIRST_VISIT_EXAMPLE.question, "book");
+
   return (
-    <div className="mt-4 rounded-2xl border border-dashed border-line-strong bg-paper-sunk/40 p-5 sm:p-6">
-      <p className="inline-flex rounded-full border border-line-strong bg-paper-raised px-3 py-1 text-sm font-semibold text-ink-muted">
-        Example · not saved
-      </p>
-      <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">{thread.question}</h2>
-      <p className="mt-2 text-ink-muted">
-        Maya started from a novel, then connected readings that support, challenge, and add a new perspective to her
-        question.
-      </p>
-      <div className="mt-6">
-        <ThreadExplorer thread={thread} readOnly showBoth level={3} />
-      </div>
-      {thread.nextStep ? (
-        <div className="mt-6 rounded-xl bg-accent-soft p-4">
-          <p className="text-[0.8rem] font-semibold uppercase tracking-wide text-accent">Her next step</p>
-          <p className="mt-1">{thread.nextStep.text}</p>
+    <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:gap-16">
+      <DocumentTitle title="Follow a question through what you read" />
+      <div>
+        {latest ? (
+          <p className="mb-6 text-[0.875rem]">
+            <span className="text-ink-muted">Your saved map: </span>
+            <Link href={threadPath(latest.id)} className="text-accent underline underline-offset-4">
+              {latest.question}
+            </Link>
+          </p>
+        ) : null}
+        <h1 className="text-[1.875rem] leading-[1.15] tracking-[-0.01em] sm:text-[2.5rem]">
+          Follow a <em className="text-accent">question</em> through what you read.
+        </h1>
+        <p className="mt-3 max-w-prose text-[1rem] leading-relaxed text-ink-muted">
+          Add something you&apos;re reading and a question it raised. Your question becomes the center of a map you
+          can keep building.
+        </p>
+        <div className="mt-8">
+          <StartThreadForm
+            handle={formRef}
+            titleRef={titleRef}
+            onValuesChange={setValues}
+            submitLabel={latest ? "Create a new map" : "Create my first map"}
+          />
         </div>
-      ) : null}
-      <Button className="mt-6" onClick={onStartOwn}>
-        Start your own exploration
-      </Button>
+      </div>
+
+      <aside aria-labelledby={previewId} className="lg:sticky lg:top-10 lg:self-start lg:pt-3">
+        <h2
+          id={previewId}
+          className="flex items-center gap-2 font-sans text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-ink-muted"
+        >
+          {typed ? <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" /> : null}
+          Preview · not saved
+        </h2>
+        <div className="mt-3 rounded-xl border border-line bg-paper-raised px-5 py-8">
+          <ThreadMap thread={preview} interactive={false} />
+        </div>
+        <p className="mt-3 text-[0.875rem] leading-relaxed text-ink-muted">
+          {typed ? (
+            "This is how your map will start. It updates as you type."
+          ) : (
+            <>
+              Example: a reader of <i>{FIRST_VISIT_EXAMPLE.title}</i> asks “{FIRST_VISIT_EXAMPLE.question}”{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  formRef.current?.fill({ title: FIRST_VISIT_EXAMPLE.title, question: FIRST_VISIT_EXAMPLE.question });
+                  titleRef.current?.focus();
+                }}
+                className="font-semibold text-accent underline underline-offset-4"
+              >
+                Use this example
+              </button>
+            </>
+          )}
+        </p>
+      </aside>
     </div>
   );
 }

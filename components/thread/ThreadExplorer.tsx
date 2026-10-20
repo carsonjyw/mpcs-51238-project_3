@@ -25,10 +25,16 @@ export function ThreadExplorer({
   openReadingId,
   onNotice,
   level = 2,
+  quietHeading = false,
+  panelOnDemand = false,
 }: {
   thread: Thread;
   /** Heading level for "Readings"; reading titles use the next level down. */
   level?: 2 | 3;
+  /** Keep the "Readings" heading for screen readers only, so the map follows the page heading directly. */
+  quietHeading?: boolean;
+  /** Show the details panel only once a reading is selected, so a small map isn't paired with an empty box. */
+  panelOnDemand?: boolean;
   readOnly?: boolean;
   /** Show the map and the list together instead of a Map/List toggle (used by the example). */
   showBoth?: boolean;
@@ -97,9 +103,11 @@ export function ThreadExplorer({
   const editHref = (readingId: string) => connectPath(thread.id, { readingId, returnTo: "thread" });
   const pendingReading = thread.readings.find((r) => r.id === pendingRemoval);
 
+  const showPanel = !panelOnDemand || selected !== null;
+  const relationships = thread.readings.map((reading) => reading.relationship);
   const mapView = (
     <div
-      className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]"
+      className={showPanel ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]" : ""}
       onKeyDown={(event) => {
         if (event.key === "Escape" && selectedId) {
           event.stopPropagation();
@@ -120,47 +128,61 @@ export function ThreadExplorer({
             }}
           />
         </div>
-        <div className="mt-4">
-          <MapLegend />
-        </div>
+        {relationships.some((relationship) => relationship !== "raised") ? (
+          <div className="mt-4">
+            <MapLegend relationships={relationships} />
+          </div>
+        ) : null}
+        {showPanel ? null : (
+          <p className="mt-4 text-center text-[0.875rem] text-ink-muted">Select a reading to see its details.</p>
+        )}
       </div>
-      <section
-        id={panelId}
-        aria-label={selected ? undefined : "Reading details"}
-        aria-labelledby={selected ? `${panelId}-title` : undefined}
-        className="self-start rounded-xl border border-line bg-paper-raised p-5"
-      >
-        {selected ? (
-          <>
-            <RelationshipLabel relationship={selected.relationship} />
-            <SubHeading id={`${panelId}-title`} ref={panelHeadingRef} tabIndex={-1} className="mt-2 text-xl font-semibold">
-              {selected.title}
-            </SubHeading>
-            <ReadingMeta reading={selected} />
-            <ReadingNote reading={selected} />
-            {readOnly ? (
-              <div className="mt-4">
-                <Button variant="secondary" onClick={closePanel}>
-                  Close
-                </Button>
-              </div>
-            ) : (
-              <ReadingActions
-                reading={selected}
-                editHref={editHref(selected.id)}
-                onRemove={() => setPendingRemoval(selected.id)}
-                extra={
-                  <Button variant="quiet" onClick={closePanel}>
+      {showPanel ? (
+        <section
+          id={panelId}
+          aria-label={selected ? undefined : "Reading details"}
+          aria-labelledby={selected ? `${panelId}-title` : undefined}
+          className="self-start rounded-xl border border-line bg-paper-raised p-5"
+        >
+          {selected ? (
+            <>
+              <RelationshipLabel relationship={selected.relationship} />
+              <SubHeading
+                id={`${panelId}-title`}
+                ref={panelHeadingRef}
+                tabIndex={-1}
+                className="book-title mt-2 text-xl"
+              >
+                {selected.title}
+              </SubHeading>
+              <ReadingMeta reading={selected} />
+              <ReadingNote reading={selected} />
+              {readOnly ? (
+                <div className="mt-4">
+                  <Button variant="secondary" onClick={closePanel}>
                     Close
                   </Button>
-                }
-              />
-            )}
-          </>
-        ) : (
-          <p className="text-ink-muted">Select a reading on the map to see its full note{readOnly ? "" : " and actions"}.</p>
-        )}
-      </section>
+                </div>
+              ) : (
+                <ReadingActions
+                  reading={selected}
+                  editHref={editHref(selected.id)}
+                  onRemove={() => setPendingRemoval(selected.id)}
+                  extra={
+                    <Button variant="quiet" onClick={closePanel}>
+                      Close
+                    </Button>
+                  }
+                />
+              )}
+            </>
+          ) : (
+            <p className="text-ink-muted">
+              Select a reading on the map to see its full note{readOnly ? "" : " and actions"}.
+            </p>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 
@@ -174,7 +196,7 @@ export function ThreadExplorer({
           }`}
         >
           <RelationshipLabel relationship={reading.relationship} />
-          <SubHeading className="mt-2 text-xl font-semibold">{reading.title}</SubHeading>
+          <SubHeading className="book-title mt-2 text-xl">{reading.title}</SubHeading>
           <ReadingMeta reading={reading} />
           <ReadingNote reading={reading} />
           {readOnly ? null : (
@@ -191,19 +213,23 @@ export function ThreadExplorer({
 
   return (
     <section aria-labelledby={headingId}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Heading id={headingId} ref={regionHeadingRef} tabIndex={-1} className="text-2xl font-semibold">
+      <div className={`mb-4 flex flex-wrap items-center gap-3 ${quietHeading ? "justify-center" : "justify-between"}`}>
+        <Heading id={headingId} ref={regionHeadingRef} tabIndex={-1} className={quietHeading ? "sr-only" : "text-2xl"}>
           Readings <span className="font-sans text-base font-normal text-ink-muted">({thread.readings.length})</span>
         </Heading>
         {showBoth ? null : (
-          <div role="group" aria-label="View" className="inline-flex rounded-lg border border-line-strong bg-paper-raised p-1">
+          <div
+            role="group"
+            aria-label="View"
+            className="inline-flex rounded-lg border border-line-strong bg-paper-raised p-1"
+          >
             {(["map", "list"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
                 aria-pressed={view === option}
                 onClick={() => chooseView(option)}
-                className={`min-h-9 rounded-md px-4 font-semibold ${
+                className={`min-h-8 rounded-md px-3 text-[0.875rem] font-semibold ${
                   view === option ? "bg-accent text-white" : "text-ink hover:bg-paper-sunk"
                 }`}
               >

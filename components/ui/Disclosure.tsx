@@ -26,14 +26,14 @@ export function Disclosure({
         aria-expanded={open}
         aria-controls={id}
         onClick={() => onOpenChange(!open)}
-        className="group flex min-h-11 w-full items-start gap-2 rounded-lg py-1.5 text-left font-semibold text-accent hover:underline hover:underline-offset-4"
+        className="group flex min-h-11 w-full items-center gap-2 rounded-lg py-1.5 text-left text-[0.9375rem] font-semibold text-accent hover:underline hover:underline-offset-4"
       >
-        <span aria-hidden="true" className={`mt-0.5 inline-block transition-transform ${open ? "rotate-90" : ""}`}>
+        <span aria-hidden="true" className={`inline-block text-[0.75rem] transition-transform ${open ? "rotate-90" : ""}`}>
           ▸
         </span>
         <span>
           {summary}
-          {caption ? <span className="block text-[0.95rem] font-normal text-ink-muted">{caption}</span> : null}
+          {caption ? <span className="block text-[0.875rem] font-normal text-ink-muted">{caption}</span> : null}
         </span>
       </button>
       <div id={id} hidden={!open}>

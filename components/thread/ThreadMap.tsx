@@ -90,23 +90,26 @@ export function ThreadMap({
     return () => observer.disconnect();
   }, []);
 
+  // One reading and one question: a compact two-node layout in normal flow, so long titles and
+  // questions wrap naturally at any width. Larger threads go radial, or stack on narrow screens.
+  const twoNode = thread.readings.length === 1;
   const radial = width >= (compact ? 420 : RADIAL_MIN_WIDTH);
 
-  function renderNode(reading: Reading, style?: React.CSSProperties) {
+  function renderNode(reading: Reading, style?: React.CSSProperties, flow = false) {
     const selected = selectedId === reading.id;
     const content = (
       <>
         <RelationshipLabel relationship={reading.relationship} size="xs" />
-        <span className={`mt-1 line-clamp-2 font-serif font-semibold leading-snug text-ink ${compact ? "text-[0.95rem]" : "text-base"}`}>
+        <span className={`book-title mt-1 leading-snug text-ink ${flow ? "" : "line-clamp-2"} ${compact ? "text-[1rem]" : "text-[1.0625rem]"}`}>
           {reading.title}
         </span>
-        <span className="mt-0.5 line-clamp-1 text-[0.82rem] text-ink-muted">
+        <span className={`mt-0.5 text-[0.8125rem] text-ink-muted ${flow ? "" : "line-clamp-1"}`}>
           {READING_TYPES[reading.type]}
           {reading.author ? ` · ${reading.author}` : ""}
         </span>
       </>
     );
-    const classes = `flex flex-col items-start overflow-hidden rounded-lg border bg-paper-raised px-3 py-2 text-left shadow-sm ${
+    const classes = `flex flex-col items-start overflow-hidden rounded-lg border bg-paper-raised px-3 py-2 text-left ${
       selected ? "border-accent ring-2 ring-accent" : "border-line-strong"
     } ${highlightId === reading.id ? "fade-in" : ""}`;
 
@@ -133,20 +136,43 @@ export function ThreadMap({
     );
   }
 
-  const question = (style?: React.CSSProperties) => (
+  const question = (style?: React.CSSProperties, flow = false) => (
     <div
-      className="flex flex-col justify-center rounded-xl border-2 border-ink bg-paper-raised px-4 py-3 text-center"
+      className={`flex flex-col justify-center rounded-xl border border-ink bg-paper-raised text-center ${flow ? "px-6 py-5" : "px-4 py-3"}`}
       style={style}
     >
-      <span className="text-[0.72rem] font-semibold uppercase tracking-wide text-ink-muted">Question</span>
-      <span className={`line-clamp-4 font-serif font-semibold leading-snug ${compact ? "text-base" : "text-lg"}`}>
+      <span className="text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-ink-muted">Question</span>
+      <span
+        className={`mt-1 font-serif leading-[1.35] text-ink ${flow ? "" : "line-clamp-4"} ${
+          flow ? (compact ? "text-[1.1875rem]" : "text-[1.3125rem]") : compact ? "text-base" : "text-lg"
+        }`}
+      >
         {thread.question}
       </span>
     </div>
   );
 
   let body: React.ReactNode = null;
-  if (width > 0 && radial) {
+  if (twoNode) {
+    const reading = thread.readings[0];
+    body = (
+      <div className="flex flex-col items-center">
+        {renderNode(reading, { width: "min(100%, 16rem)" }, true)}
+        <svg aria-hidden="true" width="12" height="40" className="shrink-0">
+          <line
+            x1="6"
+            y1="0"
+            x2="6"
+            y2="34"
+            stroke={relationshipColor[reading.relationship]}
+            {...lineStyle(reading.relationship)}
+          />
+          <circle cx="6" cy="36" r="3.5" fill="var(--color-ink)" />
+        </svg>
+        {question({ width: "min(100%, 24rem)" }, true)}
+      </div>
+    );
+  } else if (width > 0 && radial) {
     const { placed, height, cx, cy } = layout(thread.readings, width, sizes);
     body = (
       <div className="relative" style={{ height }}>
