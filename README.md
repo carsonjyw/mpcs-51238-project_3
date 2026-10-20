@@ -123,10 +123,62 @@ confirmation.
 | Supports and Challenges felt ambiguous, because the user never states their current view. | The connect form explains that the choice describes how the reading affects what you currently think, and each option has a concrete example. The contribution field suggests "I originally thought… After reading this…". No new required step; stored relationship values are unchanged. |
 | On a phone, the first map pushed the question below the first screen. On desktop, a small map stacked vertically and ran past the bottom of the screen. | On phones the original reading is a compact card with a shorter connector and smaller action buttons, so the reading and the question are visible together. On wide screens, maps with 2–4 readings place readings beside the question instead of above and below it. |
 | The map hint said "Select the book…" even for articles. | The hint now says "Select a reading to see your note." |
-| Older threads have no visible entry point from home (only the latest is linked). | **Recorded for Step 6:** a Continue card and a list of all saved threads with each question, reading count, and next step. Not changed in this round. |
+| Older threads have no visible entry point from home (only the latest is linked). | **Recorded for Step 6:** a Continue card and a list of all saved threads with each question, reading count, and next step. Not changed in this round; addressed in Step 6 (below). |
 
 Rechecked locally after the changes with a scripted run in a fresh browser profile: the core flow (create, validate,
 connect, cancel, edit, next step, remove, delete, refresh) still passes at both sizes, plus checks for the four fixes.
+
+## Returning experience (Step 6)
+
+**Reason to come back:** "I've read something related to an earlier question, or I want to continue the next step I
+saved."
+
+**Home with no saved threads** is unchanged: the first-visit form, example, and tour chapter.
+
+**Home with saved threads** shows a returning view instead of the creation form:
+- **Continue card** for the most recently updated thread: its question, latest reading (with its relationship), reading
+  count, and saved next step. Actions: **Connect another reading**, **Open map**, and **Change** or **Mark done** for the
+  next step (**Save a next step** when there is none).
+- **All your maps**: every saved thread, newest first, with its question, next step (or "No next step"), reading count,
+  and when it was last active. Each row opens its map, so older work is always reachable.
+- **+ New thread** stays available as a secondary button under the list and in the header.
+
+**Next steps** change only after a successful save: failed validation or Cancel leaves the saved step as it was.
+**Mark done** (on the Continue card or the next-step page) completes a step without adding a reading. Saving from home
+returns home with a confirmation; saving from a thread returns to that thread.
+
+Data stays in the existing localStorage format (`reading-map:v1`); preferences (`reading-map:pref:*`) and tour progress
+(`reading-map:tour`) are untouched.
+
+### Checks performed (local, http://localhost:3102, October 20, 2026)
+
+**Scripted run** in headless Chrome with a fresh, temporary profile, at 1440 × 900 and 390 × 844. **59/59 checks passed at each size**:
+- No saved data: the first-visit heading, start form, and home tour chapter appear.
+- Three threads created (one from home, two from New thread); all three appear on home, newest first, with reading
+  counts and next steps; the Continue card shows the newest; no creation form and no tour on the returning view;
+  both New thread entry points present; no horizontal overflow.
+- The oldest thread opens from the list; connecting a reading to it moves it to the Continue card with its new latest
+  reading and updated count.
+- Save a next step from home: empty text fails validation and saves nothing; Cancel saves nothing and the form is empty
+  again; a valid save returns home with "Next step saved in this browser." and updates the card.
+- Change: the form is prefilled; clearing it fails validation and keeps the old step; Cancel keeps the old step;
+  a valid replacement is saved.
+- Mark done on the Continue card clears the step without adding a reading and moves focus to the heading; Mark done
+  on the next-step page does the same and returns home. Saving from a thread page returns to the thread.
+- Refresh keeps the returning view, all three maps, and identical saved data.
+- Reopen (Chrome closed and relaunched on the same profile): saved threads, the saved next step, tour progress, and a
+  test preference are all kept; no tour appears.
+- Header New thread → Cancel returns home; Open map → wordmark returns home.
+- Deleting all three threads returns home to the original first-visit form.
+
+The existing scripted runs were rerun afterwards with no changes and no failures: first-use tour 46/46 at each size;
+core flow 52/52 on desktop and 51/51 on phone.
+
+**Manual check:** a separate session also exercised the returning paths by hand in the in-app browser at both sizes
+(three test threads, continuing an older thread, change/validate/cancel/save, Mark done on the card and on the page,
+Cancel from Connect, refresh, and reopening in a new tab), with no problems found.
+
+Not covered: storage failure while returning, and a full accessibility audit.
 
 ## First-run check
 
