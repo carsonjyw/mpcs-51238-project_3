@@ -44,6 +44,6 @@ When they return, they can see unfinished threads and choose where to continue.
 
 ## Current phase
 
-- Starter project only; no app features implemented yet.
-- Next step: agree on the MVP and user flows in plan mode.
+- MVP and user flows agreed and documented in `flows.md` (diagram also shown in `README.md`). No app features implemented yet.
+- Next step: research how three comparable tools onboard new users, then build the agreed routes and shared navigation in stages.
 - Update this section when the project moves to a new phase.
