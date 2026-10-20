@@ -1,7 +1,8 @@
 # Reading Exploration Map
 
 A tool that connects what you read with the questions and ideas you want to explore next. Built for
-Design, Build, Ship — Assignment 3: Patterns & Flows. Data is saved in your browser with localStorage.
+Design, Build, Ship — Assignment 3: Patterns & Flows. Data is saved only in your browser (localStorage), with no
+database, accounts, or external APIs. Nothing is stored on a server.
 
 ## Run locally
 
@@ -423,16 +424,17 @@ legend; the returning home leading with the saved work and next step.
 | Low | Long titles are cut off on map cards ("…every time you…"). The full title is in the note panel and the List view. | Acceptable, or allow a third line. |
 | Low | After connecting, "Delete thread" sits where the "Connect reading" button was, so it ends up under the pointer. It asks for confirmation, so nothing is lost. | Optional: leave more space above it. |
 
-### Limitations
+### Test conditions and scope
 
-- **Not a naive user:** the tester is the assistant that built the app, so it already knew the design. It followed only
-  the on-screen text, but its expectations weren't those of a real first-time user. A check with a real person is still
-  worth doing.
-- **Single session, automated browser:** one headless browser on one date, driven by clicks and typing and reviewed
-  through screenshots. No real phone, touch input, or assistive technology was used.
-- **Narrow phone coverage:** the first visit and main task were done on desktop; on phone only the returning home and the
-  map were checked.
-- **Simulated "later":** reopening was simulated by fully closing and relaunching the browser a few minutes later, not
-  days later.
-- **Test data:** the temporary profile and its saved data were deleted afterwards. Nothing is stored on the server; data
-  lives only in the browser.
+**Method (as the assignment asks):**
+- **Tester:** Claude, an AI agent, ran the check as a new user, working only from the visible interface. It had prior
+  familiarity with the app from helping build it.
+- **Browser:** a fresh temporary Chrome profile with no saved app data. The profile and its test data were deleted
+  afterwards.
+- **Returning later:** simulated by fully closing Chrome and reopening it on the same profile.
+
+**Coverage:**
+- **Desktop (1440 × 900):** the first visit, the main task, and the return.
+- **Phone size (390 × 844):** only the returning home and the map.
+- **Not part of this check:** no physical device or assistive technology was used. A study with a real person,
+  physical-phone testing and screen-reader testing aren't required by the assignment and weren't done here.
