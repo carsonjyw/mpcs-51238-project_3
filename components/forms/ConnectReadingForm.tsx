@@ -41,6 +41,7 @@ const relationshipOptions = CONNECTION_RELATIONSHIPS.map((value) => ({
   value,
   label: RELATIONSHIPS[value].label,
   description: RELATIONSHIPS[value].description,
+  detail: RELATIONSHIPS[value].example,
   marker: <LineSample relationship={value} />,
 }));
 
@@ -245,6 +246,7 @@ export function ConnectReadingForm({
         ) : (
           <RadioGroup
             legend="How does it relate to your question?"
+            hint="Choose how this reading affects what you currently think about your question."
             name="relationship"
             options={relationshipOptions}
             value={values.relationship}
@@ -262,8 +264,9 @@ export function ConnectReadingForm({
           hint={
             editingOriginal
               ? "Anything you want to remember about this reading."
-              : "What it adds to or challenges in your thinking. One sentence is enough."
+              : "How it changes your thinking. One sentence is enough. Try: “I originally thought… After reading this…”"
           }
+          placeholder={editingOriginal ? undefined : "I originally thought… After reading this…"}
           value={values.note}
           onChange={(value) => change("note", value)}
           error={errors.note}

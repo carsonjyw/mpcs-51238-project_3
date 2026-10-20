@@ -139,9 +139,12 @@ export function TextArea({
   large,
   rows = 3,
   textareaRef,
+  placeholder,
   children,
 }: BaseFieldProps & {
   rows?: number;
+  /** An example of what to write; the visible label and hint still explain the field. */
+  placeholder?: string;
   textareaRef?: Ref<HTMLTextAreaElement>;
   /** Extra content after the field and its error, such as starter questions. */
   children?: ReactNode;
@@ -159,12 +162,13 @@ export function TextArea({
         ref={textareaRef}
         id={id}
         rows={rows}
+        placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(hint ? hintId : undefined, error ? errorId : undefined)}
         aria-required={required || undefined}
-        className={`line-input mt-2 resize-y ${large ? "large" : ""}`}
+        className={`line-input mt-2 resize-y placeholder:text-ink-muted/70 ${large ? "large" : ""}`}
       />
       {counterMax ? <Counter length={value.trim().length} max={counterMax} /> : null}
       <FieldError id={errorId}>{error}</FieldError>
@@ -177,6 +181,8 @@ export interface RadioOption<V extends string> {
   value: V;
   label: string;
   description?: string;
+  /** A concrete example, shown under the description. */
+  detail?: string;
   /** Optional decoration shown before the label, such as a line-style sample. */
   marker?: ReactNode;
 }
@@ -191,9 +197,12 @@ export function RadioGroup<V extends string>({
   required,
   inline,
   compact,
+  hint,
   firstInputRef,
 }: {
   legend: ReactNode;
+  /** Short explanation under the legend. */
+  hint?: ReactNode;
   name: string;
   options: RadioOption<V>[];
   value: V | "";
@@ -245,11 +254,17 @@ export function RadioGroup<V extends string>({
   }
 
   return (
-    <fieldset aria-describedby={error ? errorId : undefined}>
-      <legend className="mb-2 text-[0.875rem] font-semibold text-ink">
+    <fieldset aria-describedby={[hint ? `${id}-hint` : "", error ? errorId : ""].filter(Boolean).join(" ") || undefined}>
+      <legend className="text-[0.875rem] font-semibold text-ink">
         {legend}
         {required ? null : <span className="font-normal text-ink-muted"> (optional)</span>}
       </legend>
+      {hint ? (
+        <p id={`${id}-hint`} className="mt-1 text-[0.8125rem] text-ink-muted">
+          {hint}
+        </p>
+      ) : null}
+      <div className="h-2" aria-hidden="true" />
       <div className={inline ? "flex flex-wrap gap-x-6 gap-y-2" : "border-t border-line"}>
         {options.map((option, index) => {
           const optionId = `${id}-${option.value}`;
@@ -271,16 +286,21 @@ export function RadioGroup<V extends string>({
                 checked={checked}
                 onChange={() => onChange(option.value)}
                 className="mt-1 size-4 shrink-0 accent-ink"
-                aria-describedby={option.description ? `${optionId}-description` : undefined}
+                aria-describedby={option.description || option.detail ? `${optionId}-description` : undefined}
               />
               <span>
                 <span className={`flex items-center gap-2 font-medium ${checked ? "font-semibold" : ""}`}>
                   {option.marker}
                   {option.label}
                 </span>
-                {option.description ? (
+                {option.description || option.detail ? (
                   <span id={`${optionId}-description`} className="block text-[0.875rem] text-ink-muted">
                     {option.description}
+                    {option.detail ? (
+                      <span className="mt-0.5 block font-serif text-[1rem] italic leading-snug">
+                        e.g. {option.detail}
+                      </span>
+                    ) : null}
                   </span>
                 ) : null}
               </span>

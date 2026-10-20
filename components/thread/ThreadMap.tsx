@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useElementWidth } from "@/lib/useElementWidth";
 import { READING_TYPES, RELATIONSHIPS } from "@/lib/relationships";
 import type { Reading, Thread } from "@/lib/types";
 import { lineStyle, relationshipColor, RelationshipLabel } from "./RelationshipLabel";
@@ -10,6 +10,8 @@ const RADIAL_MIN_WIDTH = 560;
 /** Below this width the one-reading figure runs top to bottom instead of left to right. */
 const FIGURE_ROW_MIN_WIDTH = 520;
 const PER_RING = 8;
+/** Up to this many readings sit beside the question (left and right) when there is room, using the width. */
+const SIDE_BY_SIDE_MAX = 4;
 
 const SIZES = { nodeW: 216, nodeH: 112, centerW: 250, centerH: 128, ringY: 170, ringGap: 136 };
 
@@ -19,11 +21,38 @@ interface Placed {
   y: number;
 }
 
+const SIDE_GAP = 72;
+const SIDE_BY_SIDE_MIN_WIDTH = 2 * SIZES.nodeW + SIZES.centerW + 2 * SIDE_GAP;
+
+/**
+ * Small maps on wide screens: readings alternate left and right of the question (in the order they were
+ * added), so the whole map stays short and uses the available width.
+ */
+function sideBySide(readings: Reading[], width: number) {
+  const left = readings.filter((_, index) => index % 2 === 0);
+  const right = readings.filter((_, index) => index % 2 === 1);
+  const rowGap = 28;
+  const columnHeight = (count: number) => count * SIZES.nodeH + (count - 1) * rowGap;
+  const height = Math.max(SIZES.centerH, columnHeight(left.length), columnHeight(right.length)) + 16;
+  const cx = width / 2;
+  const cy = height / 2;
+  const gap = Math.min(160, (width - 2 * SIZES.nodeW - SIZES.centerW) / 2);
+  const offset = SIZES.centerW / 2 + gap + SIZES.nodeW / 2;
+  const column = (items: Reading[], x: number): Placed[] =>
+    items.map((reading, index) => ({
+      reading,
+      x,
+      y: cy + (index - (items.length - 1) / 2) * (SIZES.nodeH + rowGap),
+    }));
+  return { placed: [...column(left, cx - offset), ...column(right, cx + offset)], height, cx, cy };
+}
+
 /**
  * Automatic radial layout: the question sits at the center and readings are spaced evenly on a circle,
  * in the order they were added, starting at the top. Past eight readings they continue on outer rings.
  */
 function layout(readings: Reading[], width: number) {
+  if (readings.length <= SIDE_BY_SIDE_MAX && width >= SIDE_BY_SIDE_MIN_WIDTH) return sideBySide(readings, width);
   const rings = Math.max(1, Math.ceil(readings.length / PER_RING));
   const outerY = SIZES.ringY + SIZES.ringGap * (rings - 1);
   const height = 2 * outerY + SIZES.nodeH + 16;
@@ -70,17 +99,7 @@ export function ThreadMap({
   /** Slightly smaller type for the first-visit preview plate. */
   compact?: boolean;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-
-  useLayoutEffect(() => {
-    const element = containerRef.current;
-    if (!element) return;
-    setWidth(element.clientWidth);
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+  const [containerRef, width] = useElementWidth<HTMLDivElement>();
 
   /** Wraps node content in a button (interactive maps) or a plain element (previews). The spine shows the relationship. */
   function node(reading: Reading, className: string, content: React.ReactNode, style?: React.CSSProperties) {

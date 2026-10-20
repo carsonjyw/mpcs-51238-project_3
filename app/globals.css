@@ -276,8 +276,8 @@ body {
   .figure-v .link {
     align-self: flex-start;
     width: 1px;
-    height: 64px;
-    margin: 6px 0 8px 72px;
+    height: 44px;
+    margin: 4px 0 8px 32px;
   }
   .figure-v .link::before {
     left: -3px;
@@ -292,10 +292,20 @@ body {
   .figure-v .annot {
     left: 16px;
     bottom: auto;
-    top: 24px;
+    top: 14px;
   }
+  /* On narrow screens the book becomes a compact card, so the question stays on the first screen. */
   .figure-v .book {
-    width: 136px;
-    min-height: 184px;
+    width: min(100%, 20rem);
+    min-height: 0;
+    border-left-width: 8px;
+    box-shadow: 4px 4px 0 rgba(28, 26, 22, 0.08);
+    padding: 12px 14px;
+  }
+  .figure-v .book .t {
+    font-size: 21px;
+  }
+  .figure-v .book .m {
+    padding-top: 6px;
   }
 }

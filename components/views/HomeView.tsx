@@ -7,10 +7,13 @@ import { useFlash } from "@/lib/flash";
 import { threadPath } from "@/lib/navigation";
 import { useStore } from "@/lib/store";
 import { threadsByActivity } from "@/lib/threads";
+import { RELATIONSHIPS } from "@/lib/relationships";
+import { useElementWidth } from "@/lib/useElementWidth";
 import type { Thread } from "@/lib/types";
 import { DocumentTitle } from "../DocumentTitle";
 import { PageLoading } from "../PageStates";
 import { StartThreadForm, type StartFormHandle, type StartValues } from "../forms/StartThreadForm";
+import { relationshipColor, RelationshipLabel } from "../thread/RelationshipLabel";
 import { ThreadMap } from "../thread/ThreadMap";
 import { Notice } from "../ui/Notice";
 
@@ -46,9 +49,11 @@ function FirstVisit({ latest }: { latest?: Thread }) {
   const flash = useFlash("home");
 
   const typed = !!values && (values.title.trim() !== "" || values.question.trim() !== "");
-  const preview = typed
-    ? previewThread(values.title.trim() || "Your reading", values.question.trim() || "Your question", values.type)
-    : previewThread(FIRST_VISIT_EXAMPLE.title, FIRST_VISIT_EXAMPLE.question, "book");
+  const preview = previewThread(
+    values?.title.trim() || "Your reading",
+    values?.question.trim() || "Your question",
+    values?.type ?? "book",
+  );
 
   return (
     <div className="grid items-start gap-9 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-[72px]">
@@ -83,12 +88,12 @@ function FirstVisit({ latest }: { latest?: Thread }) {
       <aside aria-labelledby={previewId} className="plate">
         <div className="plate-head">
           <h2 id={previewId} className="font-mono text-[12px] leading-none">
-            Fig. 1 — Preview
+            {typed ? "Fig. 1 — Preview" : "Fig. 1 — Example"}
           </h2>
           <span>Not saved</span>
         </div>
         <div className="px-5 pb-10 pt-6 sm:px-9">
-          <ThreadMap thread={preview} interactive={false} compact />
+          {typed ? <ThreadMap thread={preview} interactive={false} compact /> : <ExampleFigure />}
         </div>
         <p className="border-t border-line px-[18px] pb-[18px] pt-3.5 text-[0.8125rem] text-ink-muted">
           {typed ? (
@@ -96,7 +101,8 @@ function FirstVisit({ latest }: { latest?: Thread }) {
           ) : (
             <>
               <b className="font-mono text-[12px] font-medium text-ink">Example.</b> A reader of{" "}
-              <i>{FIRST_VISIT_EXAMPLE.title}</i> asks what makes a place feel like home.{" "}
+              <i>{FIRST_VISIT_EXAMPLE.title}</i> asks what makes a place feel like home. When you read something
+              related, connect it to your question and note how it changes your thinking.{" "}
               <button
                 type="button"
                 onClick={() => {
@@ -111,6 +117,58 @@ function FirstVisit({ latest }: { latest?: Thread }) {
           )}
         </p>
       </aside>
+    </div>
+  );
+}
+
+/**
+ * The read-only example: one reading raises the question, and a second reading changes the reader's
+ * thinking about it, with the note they wrote. It is a constant in the code and never saved.
+ */
+function ExampleFigure() {
+  const [ref, width] = useElementWidth<HTMLDivElement>();
+  const row = width === 0 || width >= 520;
+  const example = FIRST_VISIT_EXAMPLE;
+  const next = example.next;
+  return (
+    <div ref={ref}>
+      <div className={row ? "flex items-center" : "figure-v flex flex-col items-start"}>
+        <div className="book" style={{ borderLeftColor: relationshipColor.raised }}>
+          <span className="t">{example.title}</span>
+          <span className="m">Book</span>
+        </div>
+        <div className="link" aria-hidden="true">
+          <span className="annot">raised this question</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="mono-label">The question</p>
+          <p className={`quote-q mt-3 ${row ? "text-[2.25rem]" : "text-[2rem]"}`}>{example.question}</p>
+        </div>
+      </div>
+
+      {/* Then a second reading connects to the question, with a note on how it changed the reader's thinking. */}
+      <div className={row ? "ml-[330px]" : ""}>
+        <div className="relative h-11 w-px" aria-hidden="true">
+          <span
+            className="absolute inset-y-1 left-0 border-l-2 border-dashed"
+            style={{ borderColor: relationshipColor[next.relationship] }}
+          />
+        </div>
+        <div
+          className="border border-ink border-l-[6px] bg-paper-raised px-4 py-3"
+          style={{ borderLeftColor: relationshipColor[next.relationship] }}
+        >
+          <RelationshipLabel relationship={next.relationship} size="xs" />
+          <p className="book-title mt-1.5 text-[1.25rem] leading-tight">{next.title}</p>
+          <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.05em] text-ink-muted">
+            Book · {next.author}
+          </p>
+          <p className="mono-label mt-3">
+            Note <span className="sr-only">({RELATIONSHIPS[next.relationship].label})</span>
+          </p>
+          <p className="mt-1 text-[0.9375rem] leading-snug">{next.note}</p>
+        </div>
+      </div>
     </div>
   );
 }

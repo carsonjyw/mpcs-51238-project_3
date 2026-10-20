@@ -116,7 +116,7 @@ export function ThreadExplorer({
       }}
     >
       {/* The map sits on a plate, as in the first-visit preview. */}
-      <div className="bg-paper-sunk px-5 pb-8 pt-10 sm:px-12 sm:pt-14">
+      <div className="bg-paper-sunk px-4 pb-6 pt-6 sm:px-12 sm:pb-8 sm:pt-14">
         <div role="group" aria-label={`Map: readings connected to “${thread.question}”`}>
           <ThreadMap
             thread={thread}
@@ -135,7 +135,7 @@ export function ThreadExplorer({
           </div>
         ) : null}
         {showPanel ? null : (
-          <p className="fine mt-8 text-center">Select the book to see its details.</p>
+          <p className="fine mt-5 text-center sm:mt-8">Select a reading to see your note.</p>
         )}
       </div>
       {showPanel ? (

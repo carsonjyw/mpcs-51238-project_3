@@ -2,7 +2,13 @@ import type { ConnectionRelationship, ReadingType, Relationship } from "./types"
 
 export const RELATIONSHIPS: Record<
   Relationship,
-  { label: string; description: string; line: "solid" | "dashed" | "dotted" | "neutral" }
+  {
+    label: string;
+    description: string;
+    /** A concrete illustration shown in the connect form. */
+    example?: string;
+    line: "solid" | "dashed" | "dotted" | "neutral";
+  }
 > = {
   raised: {
     label: "Raised this question",
@@ -11,17 +17,20 @@ export const RELATIONSHIPS: Record<
   },
   supports: {
     label: "Supports",
-    description: "Backs up, confirms, or gives evidence for an idea in your question.",
+    description: "It strengthens what you currently think about your question.",
+    example: "You think home is mostly about people, and a memoir shows the same thing.",
     line: "solid",
   },
   challenges: {
     label: "Challenges",
-    description: "Questions, contradicts, or complicates your current thinking.",
+    description: "It makes you reconsider what you currently think.",
+    example: "You think home is mostly about people, but an essay argues it's about familiar places.",
     line: "dashed",
   },
   perspective: {
     label: "Adds a new perspective",
-    description: "Looks at the question from a different angle, field, or experience.",
+    description: "It opens an angle you hadn't been thinking about.",
+    example: "A study of how animals choose where to live.",
     line: "dotted",
   },
 };

@@ -26,6 +26,9 @@ function formatDate(iso: string) {
   return dateFormat.format(new Date(iso));
 }
 
+/** Smaller action buttons on phones, so the map's reading and question fit on the first screen. */
+const compactOnPhone = "max-sm:min-h-10 max-sm:px-4 max-sm:text-[0.875rem]";
+
 /** Threads deleted from this page, so it doesn't flash "not found" while navigating home. */
 const deletedHere = new Set<string>();
 
@@ -122,7 +125,7 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
       </div>
 
       {/* A compact heading: the question itself is the center of the map below, so it isn't repeated here. */}
-      <header className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+      <header className="mt-4 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 sm:mt-5">
         <div className="min-w-0">
           <h1 ref={headingRef} tabIndex={-1} className="text-[2.125rem] leading-[1.05] lg:text-[2.75rem]">
             {isFirst ? "Your first map" : "Your map"}
@@ -133,10 +136,16 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <ButtonLink href={connectPath(thread.id, { returnTo: "thread" })}>
+          <ButtonLink href={connectPath(thread.id, { returnTo: "thread" })} className={compactOnPhone}>
             Connect another reading <span aria-hidden="true">→</span>
           </ButtonLink>
-          <Button ref={editButtonRef} variant="secondary" onClick={startEditingQuestion} aria-expanded={editingQuestion}>
+          <Button
+            ref={editButtonRef}
+            variant="secondary"
+            onClick={startEditingQuestion}
+            aria-expanded={editingQuestion}
+            className={compactOnPhone}
+          >
             Edit question
           </Button>
         </div>
@@ -168,7 +177,7 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
 
       <section
         aria-labelledby={nextStepId}
-        className="mt-7 flex flex-wrap items-baseline gap-x-5 gap-y-1 border-y border-line py-3.5"
+        className="mt-5 flex flex-wrap items-baseline gap-x-5 gap-y-1 border-y border-line py-3 sm:mt-7 sm:py-3.5"
       >
         <h2 id={nextStepId} className="mono-label font-mono">
           Next step
@@ -190,7 +199,7 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
         )}
       </section>
 
-      <div className="mt-8">
+      <div className="mt-5 sm:mt-8">
         <ThreadExplorer
           thread={thread}
           openReadingId={openReadingId}

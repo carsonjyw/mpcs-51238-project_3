@@ -60,4 +60,11 @@ export const EXAMPLE_THREAD: Thread = {
 export const FIRST_VISIT_EXAMPLE = {
   title: "The Little Prince",
   question: "What makes a place feel like home?",
+  /** A second reading, so the example shows how an exploration continues. Read-only, never saved. */
+  next: {
+    title: "The Poetics of Space",
+    author: "Gaston Bachelard",
+    relationship: "challenges",
+    note: "I originally thought home was mostly about people. After reading this, I think it's also the rooms and corners that hold our memories.",
+  },
 } as const;
