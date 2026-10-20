@@ -1,7 +1,7 @@
 import { ButtonLink } from "./ui/Button";
 
 /** Shown while saved data is read, so returning users never see the first-visit form flash. */
-export function PageLoading({ label = "Loading your threads…" }: { label?: string }) {
+export function PageLoading({ label = "Loading your maps…" }: { label?: string }) {
   return (
     <div className="max-w-2xl" aria-busy="true">
       <p role="status" className="sr-only">
@@ -41,8 +41,8 @@ export function NotFoundMessage({
 export function ThreadNotFound() {
   return (
     <NotFoundMessage
-      title="This thread isn't saved on this device."
-      body="It may have been deleted, or it was saved in a different browser. Your threads are kept only in the browser where you created them."
+      title="This map isn't saved on this device."
+      body="It may have been deleted, or it was saved in a different browser. Your maps are kept only in the browser where you created them."
       actionHref="/"
       actionLabel="Go home"
     />

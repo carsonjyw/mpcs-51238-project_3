@@ -2,6 +2,17 @@
 
 import { useId, type ReactNode, type Ref } from "react";
 
+/**
+ * Focus an invalid field and keep its whole block (label, field, hint, and error) in view, with some margin,
+ * instead of letting the browser scroll just the input itself to the edge of the screen.
+ */
+export function focusField(element: HTMLElement | null | undefined) {
+  if (!element) return;
+  element.focus({ preventScroll: true });
+  const block = element.closest<HTMLElement>("[data-field]") ?? element;
+  block.scrollIntoView({ block: "nearest" });
+}
+
 export function FieldError({ id, children }: { id: string; children?: ReactNode }) {
   if (!children) return null;
   return (
@@ -103,7 +114,7 @@ export function TextField({
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
   return (
-    <div>
+    <div data-field="" className="scroll-my-6">
       <Label htmlFor={id} required={required} number={number}>
         {label}
       </Label>
@@ -153,7 +164,7 @@ export function TextArea({
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
   return (
-    <div>
+    <div data-field="" className="scroll-my-6">
       <Label htmlFor={id} required={required} number={number}>
         {label}
       </Label>
@@ -217,7 +228,7 @@ export function RadioGroup<V extends string>({
 
   if (compact) {
     return (
-      <fieldset aria-describedby={error ? errorId : undefined} className="inline-flex">
+      <fieldset data-field="" aria-describedby={error ? errorId : undefined} className="inline-flex scroll-my-6">
         <legend className="sr-only">{legend}</legend>
         <div className="inline-flex rounded-full border border-line p-0.5 text-[0.8125rem]">
           {options.map((option, index) => {
@@ -252,7 +263,11 @@ export function RadioGroup<V extends string>({
   }
 
   return (
-    <fieldset aria-describedby={[hint ? `${id}-hint` : "", error ? errorId : ""].filter(Boolean).join(" ") || undefined}>
+    <fieldset
+      data-field=""
+      className="scroll-my-6"
+      aria-describedby={[hint ? `${id}-hint` : "", error ? errorId : ""].filter(Boolean).join(" ") || undefined}
+    >
       <legend className="text-[0.875rem] font-semibold text-ink">
         {legend}
         {required ? null : <span className="font-normal text-ink-muted"> (optional)</span>}
@@ -283,13 +298,15 @@ export function RadioGroup<V extends string>({
                 value={option.value}
                 checked={checked}
                 onChange={() => onChange(option.value)}
-                className="mt-1 size-4 shrink-0 accent-ink"
+                // Drawn by us rather than the browser, so the circle always fits its box at any zoom and never clips.
+                className="radio-dot"
                 aria-describedby={option.description ? `${optionId}-description` : undefined}
               />
-              <span>
-                <span className={`flex items-center gap-2 font-medium ${checked ? "font-semibold" : ""}`}>
-                  {option.marker}
-                  {option.label}
+              <span className="min-w-0 flex-1">
+                {/* The line sample sits on the first line, so a long label can wrap beside it. */}
+                <span className={`flex items-start gap-2 font-medium ${checked ? "font-semibold" : ""}`}>
+                  {option.marker ? <span className="mt-[calc(0.775em-5px)] flex shrink-0">{option.marker}</span> : null}
+                  <span className="min-w-0">{option.label}</span>
                 </span>
                 {option.description ? (
                   <span id={`${optionId}-description`} className="block text-[0.875rem] text-ink-muted">

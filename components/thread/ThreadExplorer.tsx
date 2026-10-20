@@ -259,7 +259,7 @@ export function ThreadExplorer({
           onConfirm={confirmRemoval}
           onCancel={() => setPendingRemoval(null)}
         >
-          Remove “{pendingReading?.title}” from this thread? Its note will be deleted.
+          Remove “{pendingReading?.title}” from this map? Its note will be deleted.
         </ConfirmDialog>
       )}
     </section>

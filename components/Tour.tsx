@@ -40,11 +40,21 @@ export function Tour({
   const [open, setOpen] = useState(() => shouldShowChapter(chapter));
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
+  // The chapter's other highlighted elements, which the panel shouldn't cover, and the panel's real height.
+  const [others, setOthers] = useState<Rect[]>([]);
+  const [panelHeight, setPanelHeight] = useState(0);
   // Start from the real window size (the tour only renders in the browser), so the very first frame is already
   // laid out for this screen: docked on phones, and the first scroll check sees the panel where it really is.
   const [viewport, setViewport] = useState(() =>
     typeof window === "undefined" ? { width: 0, height: 0 } : { width: window.innerWidth, height: window.innerHeight },
   );
+  // The target the spotlight and panel are currently shown for. It catches up with the current step only once that
+  // step's target is in view and has stopped moving, so nothing is ever drawn at a stale or in-between position.
+  const [shownTarget, setShownTarget] = useState<string | null>(null);
+  // True for the one update where the spotlight moves from the previous step's target to the next one.
+  const [moving, setMoving] = useState(false);
+  const shownRef = useRef<string | null>(null);
+  const rectRef = useRef<Rect | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -52,25 +62,98 @@ export function Tour({
   const bodyId = useId();
   const current = steps[step];
   const targetName = current.target;
+  const settled = shownTarget === targetName;
+  // The panel shows once its step has settled and the spotlight has finished moving there.
+  const panelVisible = settled && !moving;
+  useEffect(() => {
+    rectRef.current = rect;
+  }, [rect]);
 
   // Remember this chapter as soon as it is shown, so refreshing doesn't reopen it. Other chapters are unaffected.
   useEffect(() => {
     if (open) markChapterSeen(chapter);
   }, [open, chapter]);
 
-  // Track the target's position (and the viewport) while the chapter is open.
-  useLayoutEffect(() => {
+  // For each step: wait until its target is on the page and visible, bring it into view (above the docked panel on
+  // phones), wait until it has stopped moving (the scroll has finished), and only then show the spotlight and panel.
+  useEffect(() => {
     if (!open) return;
+    let frame = 0;
+    let frames = 0;
+    let stableFrames = 0;
+    let scrolled = false;
+    let last: DOMRect | null = null;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const tick = () => {
+      frames += 1;
+      const element = findTarget(root, targetName);
+      const box = element && element.getClientRects().length > 0 ? element.getBoundingClientRect() : null;
+      if (!box) {
+        // The page (for example, one just navigated to) isn't ready yet.
+        if (frames < 120) frame = requestAnimationFrame(tick);
+        return;
+      }
+      if (!scrolled) {
+        scrolled = true;
+        const docked = window.innerWidth < DOCK_BELOW;
+        const panelTop = docked ? window.innerHeight - (panelRef.current?.offsetHeight ?? 0) : window.innerHeight;
+        const margin = SPOT_PAD + 8;
+        if (box.top < margin || box.bottom > panelTop - margin) {
+          const available = panelTop - 2 * margin;
+          const desiredTop = box.height < available ? margin + (available - box.height) / 2 : margin;
+          window.scrollBy({ top: box.top - desiredTop, behavior: smooth ? "smooth" : "auto" });
+        }
+      }
+      const same =
+        last &&
+        Math.abs(last.top - box.top) < 0.5 &&
+        Math.abs(last.left - box.left) < 0.5 &&
+        Math.abs(last.height - box.height) < 0.5;
+      stableFrames = same ? stableFrames + 1 : 0;
+      last = box;
+      if (stableFrames < 3 && frames < 90) {
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+      // Ease the spotlight from the previous target only if it actually moves (and motion is allowed); the panel
+      // then appears when that move has finished, so text and spotlight always change together.
+      const next = { top: box.top, left: box.left, width: box.width, height: box.height };
+      const from = rectRef.current;
+      const moves =
+        smooth &&
+        shownRef.current !== null &&
+        !!from &&
+        (Math.abs(from.top - next.top) > 0.5 || Math.abs(from.left - next.left) > 0.5 || Math.abs(from.height - next.height) > 0.5);
+      setRect(next);
+      setOthers(
+        steps
+          .filter((s) => s.target !== targetName)
+          .map((s) => findTarget(root, s.target)?.getBoundingClientRect())
+          .filter((b): b is DOMRect => !!b && b.width > 0)
+          .map((b) => ({ top: b.top, left: b.left, width: b.width, height: b.height })),
+      );
+      setPanelHeight(panelRef.current?.offsetHeight ?? 0);
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
+      setMoving(moves);
+      shownRef.current = targetName;
+      setShownTarget(targetName);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [open, root, targetName, steps]);
+
+  // Once shown, the spotlight follows its target exactly as the page scrolls or resizes (no easing, so it never lags).
+  useEffect(() => {
+    if (!open || !shownTarget) return;
     let frame = 0;
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const box = findTarget(root, targetName)?.getBoundingClientRect();
-        setRect(box ? { top: box.top, left: box.left, width: box.width, height: box.height } : null);
+        const box = findTarget(root, shownTarget)?.getBoundingClientRect();
+        if (box) setRect({ top: box.top, left: box.left, width: box.width, height: box.height });
         setViewport({ width: window.innerWidth, height: window.innerHeight });
       });
     };
-    measure();
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     return () => {
@@ -78,28 +161,7 @@ export function Tour({
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [open, root, targetName]);
-
-  // Bring the target fully into view. On phones it must sit entirely above the docked panel.
-  useEffect(() => {
-    if (!open) return;
-    const frame = requestAnimationFrame(() => {
-      const element = findTarget(root, targetName);
-      if (!element) return;
-      const box = element.getBoundingClientRect();
-      const docked = window.innerWidth < DOCK_BELOW;
-      const panelTop = docked
-        ? (panelRef.current?.getBoundingClientRect().top ?? window.innerHeight)
-        : window.innerHeight;
-      const margin = SPOT_PAD + 8;
-      if (box.top >= margin && box.bottom <= panelTop - margin) return;
-      const available = panelTop - 2 * margin;
-      const desiredTop = box.height < available ? margin + (available - box.height) / 2 : margin;
-      const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      window.scrollBy({ top: box.top - desiredTop, behavior: smooth ? "smooth" : "auto" });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [open, root, targetName]);
+  }, [open, root, shownTarget]);
 
   // On phones, add room below the page while the panel is docked, so even the last fields can scroll above it.
   useLayoutEffect(() => {
@@ -137,12 +199,11 @@ export function Tour({
     };
   }, [open]);
 
-  // Move focus into the panel once the page has finished rendering.
+  // Move focus into the panel when the chapter first appears (after its target has settled), not before.
+  const firstShown = shownTarget !== null;
   useEffect(() => {
-    if (!open) return;
-    const frame = requestAnimationFrame(() => requestAnimationFrame(() => nextRef.current?.focus()));
-    return () => cancelAnimationFrame(frame);
-  }, [open]);
+    if (open && firstShown) nextRef.current?.focus();
+  }, [open, firstShown]);
 
   const close = useCallback(
     (skipped: boolean) => {
@@ -159,6 +220,15 @@ export function Tour({
     },
     [fallbackFocus],
   );
+
+  // Leaving the page with the browser's Back or Forward closes the chapter first (it isn't marked skipped, and it
+  // was already recorded as seen, so it won't reopen).
+  useEffect(() => {
+    if (!open) return;
+    const onPopState = () => setOpen(false);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [open]);
 
   // Escape skips the tour from anywhere while a chapter is open.
   useEffect(() => {
@@ -201,48 +271,63 @@ export function Tour({
       }
     : null;
 
-  // Desktop: beside the target when there is room (right, then left), otherwise below or above it.
+  // Desktop: beside the target (right, then left), otherwise below or above it. The first position that fits on
+  // screen and doesn't cover the chapter's other highlighted elements (such as the reading beside the question)
+  // wins; failing that, the first that fits.
   let panelStyle: React.CSSProperties = {};
   if (!docked && spot) {
-    const fitsRight = spot.left + spot.width + GAP + PANEL_W <= viewport.width - GAP;
-    const fitsLeft = spot.left - GAP - PANEL_W >= GAP;
-    const top = Math.min(Math.max(GAP, spot.top), viewport.height - 260);
-    if (fitsRight) panelStyle = { top, left: spot.left + spot.width + GAP };
-    else if (fitsLeft) panelStyle = { top, left: spot.left - GAP - PANEL_W };
-    else if (spot.top + spot.height + GAP + 220 <= viewport.height)
-      panelStyle = {
-        top: spot.top + spot.height + GAP,
-        left: Math.min(Math.max(GAP, spot.left), viewport.width - PANEL_W - GAP),
-      };
-    else
-      panelStyle = {
-        top: Math.max(GAP, spot.top - GAP - 220),
-        left: Math.min(Math.max(GAP, spot.left), viewport.width - PANEL_W - GAP),
-      };
+    const height = panelHeight || 230;
+    const clampTop = (top: number) => Math.min(Math.max(GAP, top), viewport.height - height - GAP);
+    const clampLeft = (left: number) => Math.min(Math.max(GAP, left), viewport.width - PANEL_W - GAP);
+    const below = spot.top + spot.height + GAP;
+    const above = spot.top - GAP - height;
+    const candidates = [
+      { top: clampTop(spot.top), left: spot.left + spot.width + GAP },
+      { top: clampTop(spot.top), left: spot.left - GAP - PANEL_W },
+      { top: below, left: clampLeft(spot.left) },
+      { top: below, left: clampLeft(spot.left + spot.width - PANEL_W) },
+      { top: above, left: clampLeft(spot.left) },
+      { top: above, left: clampLeft(spot.left + spot.width - PANEL_W) },
+    ];
+    const fits = (c: { top: number; left: number }) =>
+      c.left >= GAP && c.left + PANEL_W <= viewport.width - GAP && c.top >= GAP && c.top + height <= viewport.height - GAP;
+    const covers = (c: { top: number; left: number }, r: Rect) =>
+      c.left < r.left + r.width + SPOT_PAD &&
+      c.left + PANEL_W > r.left - SPOT_PAD &&
+      c.top < r.top + r.height + SPOT_PAD &&
+      c.top + height > r.top - SPOT_PAD;
+    panelStyle =
+      candidates.find((c) => fits(c) && !others.some((r) => covers(c, r))) ?? candidates.find(fits) ?? candidates[2];
   }
 
   const last = step === steps.length - 1;
   const secondary =
     "inline-flex min-h-10 items-center rounded-full border border-ink px-5 text-[0.875rem] font-semibold hover:bg-ink hover:text-paper";
 
-  // Rendered at the end of <body>, outside the page, so the rest of the page can be made inert.
+  // Rendered at the end of <body>, outside the page, so the rest of the page can be made inert. Until the first
+  // target has settled, the layer is invisible but already blocks the page, so there's no interactive gap.
   return createPortal(
     <div
       data-tour-layer=""
-      className="fixed inset-0 z-50"
+      className={`fixed inset-0 z-50 transition-opacity duration-200 motion-reduce:transition-none ${
+        firstShown ? "opacity-100" : "opacity-0"
+      }`}
       // Clicking the dimmed page does nothing and keeps focus in the panel.
       onMouseDown={(event) => {
         if (!panelRef.current?.contains(event.target as Node)) event.preventDefault();
       }}
     >
-      {/* The spotlight: everything outside the highlighted area is dimmed and can't be clicked. */}
-      {/* Keyed separately, so the spotlight appears in place instead of transitioning from the full-screen dim. */}
+      {/* The spotlight: everything outside the highlighted area is dimmed and can't be clicked. It moves to the next
+          step's target only once that target has settled, easing just for that move. */}
       {spot ? (
         <div
           key="spot"
           aria-hidden="true"
-          className="pointer-events-none fixed border-2 border-accent transition-all duration-200 motion-reduce:transition-none"
+          className={`pointer-events-none fixed border-2 border-accent ${
+            moving ? "transition-all duration-200 motion-reduce:transition-none" : ""
+          }`}
           style={{ ...spot, boxShadow: "0 0 0 9999px rgba(28, 26, 22, 0.55)" }}
+          onTransitionEnd={() => setMoving(false)}
         />
       ) : (
         <div key="dim" aria-hidden="true" className="fixed inset-0 bg-ink/55" />
@@ -255,8 +340,13 @@ export function Tour({
         aria-labelledby={titleId}
         aria-describedby={bodyId}
         onKeyDown={trapTab}
+        // Hidden at once when the step changes; fades in once the new step has settled.
         className={`fixed border border-ink bg-paper text-ink ${
           docked ? "inset-x-0 bottom-0 border-x-0 border-b-0 px-[18px] pb-4 pt-3.5" : "w-[340px] p-5"
+        } ${
+          panelVisible
+            ? "opacity-100 transition-opacity duration-200 motion-reduce:transition-none"
+            : "pointer-events-none opacity-0"
         }`}
         style={docked ? undefined : panelStyle}
       >

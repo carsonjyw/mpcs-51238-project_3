@@ -215,6 +215,27 @@ body {
     border-bottom-color: var(--color-danger);
     border-bottom-width: 2px;
   }
+  /* A real radio input with a fixed-size, self-drawn circle: ink ring, ink dot when selected. */
+  .radio-dot {
+    appearance: none;
+    flex: none;
+    box-sizing: border-box;
+    /* Sized in em so it scales with the text, and centered on the first line of the option heading (line-height 1.55). */
+    width: 1.125em;
+    height: 1.125em;
+    margin: 0.2125em 0 0;
+    border: 1.5px solid var(--color-ink);
+    border-radius: 50%;
+    background: var(--color-paper-raised);
+    cursor: pointer;
+  }
+  .radio-dot:checked {
+    background: radial-gradient(circle, var(--color-ink) 0 0.22em, var(--color-paper-raised) 0.25em);
+  }
+  .radio-dot:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
   .btn-ink span[aria-hidden] {
     font-family: var(--font-serif);
     font-style: italic;

@@ -8,8 +8,8 @@ import { useStore } from "@/lib/store";
 import { getThread, isOriginal } from "@/lib/threads";
 import { Breadcrumbs } from "../Breadcrumbs";
 import { DocumentTitle } from "../DocumentTitle";
-import { Tour } from "../Tour";
 import { NotFoundMessage, PageLoading, ThreadNotFound } from "../PageStates";
+import { Tour } from "../Tour";
 import { ConnectReadingForm } from "../forms/ConnectReadingForm";
 import { NextStepForm } from "../forms/NextStepForm";
 import { StartThreadForm } from "../forms/StartThreadForm";
@@ -31,14 +31,14 @@ function FormPage({
   const rootRef = useRef<HTMLDivElement>(null);
   return (
     <div ref={rootRef} className="max-w-[38rem]">
-      <DocumentTitle title={title} />
       {tour ? (
         <Tour
           chapter={tour}
           root={rootRef}
-          fallbackFocus={() => rootRef.current?.querySelector<HTMLElement>("input, textarea") ?? null}
+          fallbackFocus={() => rootRef.current?.querySelector<HTMLElement>("input[type=text], textarea") ?? null}
         />
       ) : null}
+      <DocumentTitle title={title} />
       <Breadcrumbs items={crumbs} />
       <h1 tabIndex={-1} className="mt-5 text-[2.125rem] leading-[1.05] lg:text-[2.75rem]">{title}</h1>
       {intro ? <div className="mt-2 leading-relaxed text-ink-muted">{intro}</div> : null}
@@ -60,8 +60,8 @@ export function NewThreadView() {
 
   return (
     <FormPage
-      crumbs={[{ label: "Home", href: "/" }, { label: "Start a new thread" }]}
-      title="Start a new thread"
+      crumbs={[{ label: "Home", href: "/" }, { label: "Start a new map" }]}
+      title="Start a new map"
       intro="Begin from something you're reading and the question it raised."
     >
       <StartThreadForm cancelHref={cancelHref} submitLabel="Create map" />
@@ -78,21 +78,20 @@ export function ConnectView() {
   const reading = readingId ? thread?.readings.find((r) => r.id === readingId) : undefined;
   const title = reading ? (isOriginal(reading) ? "Edit the original reading" : "Edit reading") : "Connect another reading";
 
-  if (store.status === "loading") return <PageLoading label="Loading this thread…" />;
+  if (store.status === "loading") return <PageLoading label="Loading this map…" />;
   if (!thread) return <ThreadNotFound />;
   if (readingId && !reading) {
     return (
       <NotFoundMessage
-        title="That reading isn't in this thread anymore."
-        body="It may have been removed. You can connect it again from the thread."
+        title="That reading isn't on this map anymore."
+        body="It may have been removed. You can connect it again from the map."
         actionHref={threadPath(thread.id)}
-        actionLabel="Back to thread"
+        actionLabel="Back to map"
       />
     );
   }
 
   const returnTo = parseReturnTo(searchParams.get("returnTo"), "thread");
-  const nextStepMode = !reading && searchParams.get("mode") === "next-step" && thread.nextStep !== null;
 
   return (
     <FormPage
@@ -107,10 +106,9 @@ export function ConnectView() {
     >
       <ConnectReadingForm
         // Keyed on updatedAt too: preserved pages rebuild their form from the latest saved data.
-        key={`${thread.id}:${readingId ?? "new"}:${nextStepMode ? "step" : "plain"}:${thread.updatedAt}`}
+        key={`${thread.id}:${readingId ?? "new"}:${thread.updatedAt}`}
         thread={thread}
         reading={reading}
-        nextStepMode={nextStepMode}
         returnTo={returnTo}
         cancelHref={returnHref(returnTo, thread.id)}
       />
@@ -125,7 +123,7 @@ export function NextStepView() {
   const thread = store.status === "ready" ? getThread(store.data, id) : undefined;
   const title = thread?.nextStep ? "Change your next step" : "Save a next step";
 
-  if (store.status === "loading") return <PageLoading label="Loading this thread…" />;
+  if (store.status === "loading") return <PageLoading label="Loading this map…" />;
   if (!thread) return <ThreadNotFound />;
 
   const returnTo = parseReturnTo(searchParams.get("returnTo"), "thread");

@@ -225,7 +225,7 @@ saved."
   next step (**Save a next step** when there is none).
 - **All your maps**: every saved thread, newest first, with its question, next step (or "No next step"), reading count,
   and when it was last active. Each row opens its map, so older work is always reachable.
-- **+ New thread** stays available as a secondary button under the list and in the header.
+- **+ New thread** stays available as a secondary button under the list and in the header. *(Later: renamed "+ New map", and the button under the list was removed. See "Follow-up changes and verification".)*
 
 **Next steps** change only after a successful save: failed validation or Cancel leaves the saved step as it was.
 **Mark done** (on the Continue card or the next-step page) completes a step without adding a reading. Saving from home
@@ -527,5 +527,124 @@ both affect the start of every tour chapter.
 
 **Pending for both changes:**
 - a recheck on the deployed site;
-- a production build (`npm run build`) after these changes;
+- a production build after these changes *(since done: `next build` succeeded after the later follow-up changes in sections 3–4)*;
 - testing on physical devices or with assistive technology.
+
+#### 3. Response to usability feedback: the remaining first-run findings
+
+Each fix answers a finding from the original check above. All checks were **local** (development server,
+http://localhost:3102, headless Chrome, fresh temporary profiles, 1440 × 900 and 390 × 844). **None has been rechecked on
+the deployed site.**
+
+| First-run finding | What changed | Checked locally (both sizes, all passed) |
+|---|---|---|
+| **Next step and new readings weren't connected** | When the map has a next step, connecting a new reading shows it, with **Keep it** (the default), **Mark it done** or **Replace it**. The choice is applied in the same save as the reading. Replacing a step on its own still happens in the next-step form. | Keep is the default. Keep, Mark done and Replace each save correctly, with confirmations ("Next step marked done." / "Next step replaced."). A failed submit and Cancel leave **all saved data byte-for-byte unchanged**. Replace with no text or with over 200 characters shows an error and saves nothing. The section doesn't appear when there's no next step or when editing a reading. |
+| **The tour was long and could cover the reading it explained** | See *Guidance* below. On desktop, the panel is now placed so it covers none of the chapter's highlighted elements. On phones, where the panel docks to the bottom, the element being explained is always fully above it. | Every step of every chapter, by geometry and in screenshots. |
+| **"thread" and "map" both used** | "Map" everywhere in the interface, including **+ New map**, **Delete map**, "Delete this map?", "Map deleted." and "Start a new map". Internal names and routes are unchanged. | No "thread" in the visible text, page titles or accessible names of the first visit, the returning home, a map, the connect, next-step and new-map pages, and the not-found page. |
+| **Contribution field described three ways** | Label "How does it change your thinking?"; hint "One sentence is enough. Try: …"; error "Write how this reading changes your thinking. One sentence is enough." Saved notes are labeled "How it changes your thinking". | The label, hint, error and saved-note label match. |
+| **After an error, the field's label scrolled off-screen** | A focused invalid field now brings its whole block (label, field, error) into view with a margin. | The focused field, its label and its error were all on screen for: missing title, note and relationship (connect); empty next step; empty question (new map); and an emptied question (edit). |
+| **The live preview left out the author** | The preview shows the author once entered. | The author appears in the preview. |
+| **Cancel looked different across forms** | Every Cancel is the same outlined button. | Identical style on 7 forms and entry points. Each Cancel returns where the form was opened from (map or home) and saves nothing. |
+| **With one map, home repeated it and showed two "+ New map" buttons** | See *Home with saved maps* below. | Zero, one and several maps. |
+| **Long titles were cut off on map cards** | Cards have room for 3 lines of title. The full title stays in the details panel, the List view and each reading's accessible name. On phones the full title wraps on the card. | A long title shows 3 lines on desktop and wraps in full on phone, and the full title appears in the panel and the List view. |
+| **"Delete map" ended up under the pointer after saving a reading** | "Delete map" is right-aligned, away from the connect form's left-aligned save button. The confirmation dialog is unchanged. | After a real click on "Connect reading", the button under the pointer on the map page isn't "Delete map", and their positions don't overlap. The dialog still asks first, and Escape cancels. |
+
+#### 4. Decisions made while reviewing these fixes (Carson's)
+
+**Guidance: short page-specific chapters, kept deliberately.** While addressing the "tour is long" finding, the
+walkthrough was briefly cut to the home and first-map chapters, with inline hints on the forms. **Carson decided that
+wasn't the experience wanted and restored the page-specific chapters.**
+
+The guidance is therefore four short chapters, each shown once, on the first visit to its page. Each can be skipped,
+Skip or Escape ends all of them, and saved progress was left as it was.
+
+| Chapter | Steps |
+|---|---|
+| Home | The reading, and the question it raised |
+| First map | The question, a connected reading, and **Connect another reading** |
+| Connect a reading | How it relates, and how it changes your thinking |
+| Next step | Saving one thing to explore next |
+
+The "tour is long" finding was addressed through placement and smoother transitions instead of fewer chapters.
+
+**Home with saved maps.** At first the list was hidden when only one map existed. **Carson then decided that "All your
+maps" should always show whenever a map exists:** the Continue card is a quick way to resume, and the list is a
+consistent place to find saved maps. The extra "+ New map" button under the list stays removed; the header's
+"+ New map" is the entry point.
+
+**Relationship radio circles looked clipped.** Carson saw the right side of each circle clipped, including the selected
+one.
+- **What I found:** the circles were the browser's own drawing of a native radio, scaled into a 16px box with
+  `accent-color`. In headless Chrome I couldn't reproduce the clipping at pixel densities of 1, 1.25, 1.5 or 2. No
+  ancestor clipped overflow, and the inputs didn't shrink. That suggests a browser- or zoom-dependent rendering of the
+  native control.
+- **The change:** still a real radio input with its label, but the circle is now drawn by the app (`appearance: none`):
+  an ink ring with an ink dot when selected. It's sized in `em`, so it scales with the text and stays centered on the
+  first line of its heading. Long labels such as "Adds a new perspective" wrap beside the line sample instead of
+  squeezing the circle.
+- **Checked:**
+  - full circles in all three states at 1440 × 900 and 390 × 844, at four pixel densities;
+  - at 150% text size on a 320px-wide screen, where the long label wraps;
+  - arrow keys move the selection, and the focus ring shows;
+  - the whole option is still clickable.
+- **Not yet checked:** the browser in which the clipping was originally seen.
+
+**Smoother links between the welcome, page changes and guidance.** Carson found that the welcome and the guided steps
+felt disconnected, including after page changes. Each step now runs in a fixed order, with no added fixed delays:
+1. Wait until the target is on the page and visible.
+2. Bring it into view (above the docked panel on phones).
+3. Wait until it has stopped moving.
+4. Then show the spotlight and panel.
+
+On top of that sequence:
+- **Opening:** an invisible layer blocks the page from the first frame, so there's no gap between the welcome and the
+  guide. Once the target is ready, the dim, spotlight and panel fade in together over 0.2 s.
+- **Changing steps:** the panel hides, the spotlight keeps tracking the previous element while the page scrolls, then
+  moves to the new one, and the panel fades in when that move ends.
+- **Focus:** moving focus to the heading after a page change now gives way to an opening chapter, which focuses its
+  panel. On close, focus returns to the form's first field or the page heading.
+- **Leaving:** the browser's Back or Forward closes an open chapter first. It isn't marked skipped and doesn't reopen.
+- **Unchanged:** reduced motion still skips the welcome and every fade.
+
+**Checked locally, both sizes, fresh temporary profiles:**
+- **The full journey:** welcome → home chapter → create a map → map chapter → connect chapter → save a reading → next-step
+  chapter. Passed 37/37 at each size. On every animation frame, a recorder confirmed:
+  - no overlap between the welcome and the guide, and no frame where neither covers the page;
+  - each chapter is shown only once its new page and target are on screen;
+  - no panel jumps while visible;
+  - the spotlight is always on the element being explained while the panel is showing.
+
+  The same run also checked focus on open and close, cleanup of overlays and blocked content after every close and
+  page change, Back and Forward, Skip, Escape, revisits, refresh and reduced motion. It also checked existing
+  profiles:
+  - one that skipped the guide sees no chapters;
+  - one that completed every chapter sees none;
+  - one that had seen only the home and map chapters sees just the connect chapter on its next eligible visit, and
+    their history isn't reset.
+- **Visual review:** real-time screenshot sequences of each transition, reviewed by eye: welcome to the home chapter,
+  step changes, the navigations into the map, connect and next-step chapters, and a phone step that needs scrolling.
+- **This round's focused checks** (all ten findings, plus home with zero, one and several maps): 58/58 at each size.
+- **Regression** (each suite run on its own, with a time limit, against the final code):
+
+  | Suite | Desktop | Phone |
+  |---|---|---|
+  | Welcome animation and writing space | 38/38 | 38/38 |
+  | Tour as a modal (inert page, accessibility tree, Tab trap, all four chapters) | 60/60 | 60/60 |
+  | Core flow | 52/52 | 51/51 |
+  | Returning home | 59/59 | 59/59 |
+  | axe accessibility scan, 19 app states | 0 violations | 0 violations |
+
+  Four test-script expectations were updated to match intended changes, not to hide app failures:
+  - **Wording:** the scripts now use the new labels ("map", the contribution wording).
+  - **Enter on the next step:** the core flow saves the next step by clicking **Save next step**, because the field is
+    now multi-line and Enter adds a line break.
+  - **"New map" count:** the returning suite now expects one "New map" link (the header), after the decision to remove
+    the extra button.
+  - **Spotlight timing:** the tour-modal suite now checks the spotlight once each step has settled, instead of a fixed
+    0.4 s after Next. Its first run failed 3 spotlight checks (desktop: connect step 2; phone: home step 2 and connect
+    step 2). Each was a step that scrolls, where the new sequencing deliberately waits for the scroll to finish. Once
+    settled, the spotlight was on the right element in every case.
+
+  Two earlier attempts to run everything in parallel hung or overlapped with code changes; those results were
+  discarded, and every suite above was rerun individually.
+- **Production build** (`next build`): succeeded.

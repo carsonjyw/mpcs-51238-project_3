@@ -26,7 +26,7 @@ export function ReadingNote({ reading }: { reading: Reading }) {
   return (
     <div className="mt-3">
       <p className="mono-label">
-        {original ? "Notes" : "What it contributes"}
+        {original ? "Notes" : "How it changes your thinking"}
       </p>
       {reading.note ? (
         <p className="mt-1 whitespace-pre-line">{reading.note}</p>

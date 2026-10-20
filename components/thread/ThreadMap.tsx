@@ -13,7 +13,8 @@ const PER_RING = 8;
 /** Up to this many readings sit beside the question (left and right) when there is room, using the width. */
 const SIDE_BY_SIDE_MAX = 4;
 
-const SIZES = { nodeW: 216, nodeH: 112, centerW: 250, centerH: 128, ringY: 170, ringGap: 136 };
+// Cards leave room for three lines of title; the full title is in the details panel and the List view.
+const SIZES = { nodeW: 216, nodeH: 136, centerW: 250, centerH: 128, ringY: 176, ringGap: 152 };
 
 interface Placed {
   reading: Reading;
@@ -172,7 +173,7 @@ export function ThreadMap({
     const cardContent = (reading: Reading, clamp: boolean) => (
       <>
         <RelationshipLabel relationship={reading.relationship} size="xs" />
-        <span className={`book-title mt-1.5 text-[1.1875rem] leading-[1.15] text-ink ${clamp ? "line-clamp-2" : ""}`}>
+        <span className={`book-title mt-1.5 text-[1.1875rem] leading-[1.15] text-ink ${clamp ? "line-clamp-3" : ""}`}>
           {reading.title}
         </span>
         <span

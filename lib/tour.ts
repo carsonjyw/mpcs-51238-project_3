@@ -1,6 +1,7 @@
 /**
  * First-use tour progress, under its own localStorage key (separate from saved threads and preferences).
- * Each chapter shows once, on the first visit to its page; "Skip tour" suppresses every remaining chapter.
+ * Short page-specific chapters (home, first map, connect a reading, next step), each shown once, on the first visit
+ * to its page; "Skip tour" suppresses every remaining chapter.
  */
 export type Chapter = "home" | "thread" | "connect" | "nextStep";
 

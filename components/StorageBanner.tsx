@@ -8,7 +8,7 @@ const messages = {
   failed:
     "Your latest changes couldn't be saved on this device, so they're available only for this session, until you refresh or close this tab.",
   unreadable:
-    "We couldn't read the threads saved in this browser, so we've left them untouched. Anything you add now is available only for this session.",
+    "We couldn't read the maps saved in this browser, so we've left them untouched. Anything you add now is available only for this session.",
 };
 
 export function StorageBanner() {

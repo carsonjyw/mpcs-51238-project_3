@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { FIRST_VISIT_EXAMPLE } from "@/lib/example";
 import { saveFlash, setFlash, useFlash } from "@/lib/flash";
 import { plural, timeAgo } from "@/lib/format";
-import { connectPath, newThreadPath, nextStepPath, threadPath } from "@/lib/navigation";
+import { connectPath, nextStepPath, threadPath } from "@/lib/navigation";
 import { useStore } from "@/lib/store";
 import { markNextStepDone, threadsByActivity } from "@/lib/threads";
 import { markWelcomeSeen, prefersReducedMotion, shouldShowWelcome } from "@/lib/welcome";
@@ -33,14 +33,23 @@ export function HomeView() {
 }
 
 /** The map the person is about to create, built from what they've typed (never saved from here). */
-function previewThread(title: string, question: string, type: StartValues["type"]): Thread {
+function previewThread(title: string, question: string, type: StartValues["type"], author: string): Thread {
   return {
     id: "preview",
     question,
     createdAt: "",
     updatedAt: "",
     nextStep: null,
-    readings: [{ id: "preview-reading", title, type, relationship: "raised", addedAt: "" }],
+    readings: [
+      {
+        id: "preview-reading",
+        title,
+        type,
+        author: author || undefined,
+        relationship: "raised",
+        addedAt: "",
+      },
+    ],
   };
 }
 
@@ -54,7 +63,7 @@ function FirstVisit() {
   const [welcome, setWelcome] = useState(() => shouldShowWelcome() && !prefersReducedMotion());
   // Recorded straight away (also when reduced motion skips it), so it never replays after a refresh.
   useEffect(() => markWelcomeSeen(), []);
-  // For example "Thread deleted." after deleting a thread.
+  // For example "Map deleted." after deleting a thread.
   const flash = useFlash("home");
 
   const typed = !!values && (values.title.trim() !== "" || values.question.trim() !== "");
@@ -62,6 +71,7 @@ function FirstVisit() {
     values?.title.trim() || "Your reading",
     values?.question.trim() || "Your question",
     values?.type ?? "book",
+    values?.author.trim() ?? "",
   );
 
   return (
@@ -78,18 +88,16 @@ function FirstVisit() {
           {flash?.message}
         </Notice>
         <p className="kicker">No. 01 — Begin a map</p>
-        <h1 tabIndex={-1} className="mb-3.5 mt-3.5 text-[2.375rem] leading-[1.02] tracking-[-0.015em] lg:text-[3.375rem]">
+        <h1
+          tabIndex={-1}
+          className="mb-3.5 mt-3.5 text-[2.375rem] leading-[1.02] tracking-[-0.015em] lg:text-[3.375rem]"
+        >
           What are you reading, and what did it make you <em className="text-accent">wonder?</em>
         </h1>
         <p className="mb-7 max-w-[30em] text-ink-muted">
           Write down one reading and the question it raised. That&apos;s the first page of your map.
         </p>
-        <StartThreadForm
-          handle={formRef}
-          titleRef={titleRef}
-          onValuesChange={setValues}
-          submitLabel="Begin the map"
-        />
+        <StartThreadForm handle={formRef} titleRef={titleRef} onValuesChange={setValues} submitLabel="Begin the map" />
       </section>
 
       <aside aria-labelledby={previewId} className="plate">
@@ -113,7 +121,10 @@ function FirstVisit() {
               <button
                 type="button"
                 onClick={() => {
-                  formRef.current?.fill({ title: FIRST_VISIT_EXAMPLE.title, question: FIRST_VISIT_EXAMPLE.question });
+                  formRef.current?.fill({
+                    title: FIRST_VISIT_EXAMPLE.title,
+                    question: FIRST_VISIT_EXAMPLE.question,
+                  });
                   titleRef.current?.focus();
                 }}
                 className="textlink"
@@ -187,7 +198,7 @@ function ExampleFigure() {
 function ReturningView({ threads }: { threads: Thread[] }) {
   const [current] = threads;
   const latest = current.readings[current.readings.length - 1];
-  // For example "Next step saved." after changing it from here, or "Thread deleted."
+  // For example "Next step saved." after changing it from here, or "Map deleted."
   const flash = useFlash("home");
   const headingRef = useRef<HTMLHeadingElement>(null);
   const continueId = useId();
@@ -240,7 +251,10 @@ function ReturningView({ threads }: { threads: Thread[] }) {
           <div className="px-5 pb-6 pt-2 sm:px-8">
             <p className="mono-label">The question</p>
             <p className="quote-q mt-2.5 text-[1.875rem] sm:text-[2.375rem]">
-              <Link href={threadPath(current.id)} className="hover:underline hover:decoration-1 hover:underline-offset-4">
+              <Link
+                href={threadPath(current.id)}
+                className="hover:underline hover:decoration-1 hover:underline-offset-4"
+              >
                 {current.question}
               </Link>
             </p>
@@ -264,7 +278,8 @@ function ReturningView({ threads }: { threads: Thread[] }) {
                         Change<span className="sr-only"> next step</span>
                       </Link>
                       <button type="button" onClick={completeNextStep} className="textlink">
-                        Mark done<span className="sr-only">: {current.nextStep.text}</span>
+                        Mark done
+                        <span className="sr-only">: {current.nextStep.text}</span>
                       </button>
                     </p>
                   </>
@@ -293,6 +308,7 @@ function ReturningView({ threads }: { threads: Thread[] }) {
         </section>
       </div>
 
+      {/* Always listed, even with one map, so saved maps have one consistent place. New maps start from the header. */}
       <section aria-labelledby={listId} className="lg:pt-[3.25rem]">
         <div className="flex items-baseline justify-between gap-4 border-b border-ink pb-2.5">
           <h2 id={listId} className="text-[1.75rem]">
@@ -310,7 +326,10 @@ function ReturningView({ threads }: { threads: Thread[] }) {
                 <div className="min-w-0 flex-1">
                   <h3 className="text-[1.3125rem] leading-snug">
                     {/* The whole row opens the map. */}
-                    <Link href={threadPath(thread.id)} className="after:absolute after:inset-0 hover:underline hover:decoration-1 hover:underline-offset-4">
+                    <Link
+                      href={threadPath(thread.id)}
+                      className="after:absolute after:inset-0 hover:underline hover:decoration-1 hover:underline-offset-4"
+                    >
                       {thread.question}
                     </Link>
                   </h3>
@@ -333,9 +352,6 @@ function ReturningView({ threads }: { threads: Thread[] }) {
             </li>
           ))}
         </ol>
-        <ButtonLink href={newThreadPath()} variant="secondary" className="mt-6">
-          <span aria-hidden="true">+</span> New thread
-        </ButtonLink>
       </section>
     </div>
   );

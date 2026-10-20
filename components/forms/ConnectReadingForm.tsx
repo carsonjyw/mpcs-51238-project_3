@@ -22,10 +22,10 @@ import {
 } from "@/lib/validation";
 import { LineSample } from "../thread/RelationshipLabel";
 import { Button, ButtonLink } from "../ui/Button";
-import { RadioGroup, TextArea, TextField } from "../ui/Field";
+import { focusField, RadioGroup, TextArea } from "../ui/Field";
 import { ReadingDetailsFields } from "./ReadingDetailsFields";
 
-type StepChoice = "done" | "replace";
+type StepChoice = "keep" | "done" | "replace";
 
 interface Values extends ReadingDetails {
   relationship: ConnectionRelationship | "";
@@ -52,7 +52,7 @@ function initialValues(reading?: Reading): Values {
     url: reading?.url ?? "",
     relationship: reading && !isOriginal(reading) ? (reading.relationship as ConnectionRelationship) : "",
     note: reading?.note ?? "",
-    stepChoice: "done",
+    stepChoice: "keep",
     newStep: "",
   };
 }
@@ -60,23 +60,24 @@ function initialValues(reading?: Reading): Values {
 /**
  * Connects a new reading, or edits one (`reading`). Editing the original reading changes its details only:
  * it stays "Raised this question", and its notes are optional.
- * In next-step mode the thread's next step is marked done or replaced in the same save as the reading.
+ * When the map has a next step, a new connection can keep it (the default), mark it done, or replace it. That
+ * change is applied in the same save as the reading, so a failed validation or Cancel leaves it as it was.
  */
 export function ConnectReadingForm({
   thread,
   reading,
-  nextStepMode,
   returnTo,
   cancelHref,
 }: {
   thread: Thread;
   reading?: Reading;
-  nextStepMode: boolean;
   returnTo: ReturnTo;
   cancelHref: string;
 }) {
   const router = useRouter();
   const editingOriginal = reading ? isOriginal(reading) : false;
+  // Only a new connection offers the next-step choice; editing a reading never changes the next step.
+  const currentStep = reading ? null : thread.nextStep;
   const [values, setValues] = useState<Values>(() => initialValues(reading));
   const [errors, setErrors] = useState<FormErrors>({});
   const [detailsOpen, setDetailsOpen] = useState(() => !!(reading?.author || reading?.url));
@@ -85,7 +86,7 @@ export function ConnectReadingForm({
   const urlRef = useRef<HTMLInputElement>(null);
   const relationshipRef = useRef<HTMLInputElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
-  const newStepRef = useRef<HTMLInputElement>(null);
+  const newStepRef = useRef<HTMLTextAreaElement>(null);
 
   function duplicateOf(title: string) {
     const normalized = normalizeTitle(title);
@@ -102,7 +103,7 @@ export function ConnectReadingForm({
         if (duplicate)
           return (
             <>
-              This reading is already in this thread.{" "}
+              This reading is already on this map.{" "}
               <Link
                 href={connectPath(thread.id, { readingId: duplicate.id, returnTo })}
                 className="underline underline-offset-4"
@@ -125,10 +126,10 @@ export function ConnectReadingForm({
       case "note":
         return editingOriginal ? validateOptionalNote(current.note) : validateContribution(current.note);
       case "newStep":
-        if (!nextStepMode || current.stepChoice !== "replace") return undefined;
+        if (!currentStep || current.stepChoice !== "replace") return undefined;
         return current.newStep.trim()
           ? validateNextStep(current.newStep)
-          : "Write your new next step, or choose 'Mark my next step done'.";
+          : "Write your new next step, or choose 'Keep it'.";
       default:
         return undefined;
     }
@@ -140,7 +141,7 @@ export function ConnectReadingForm({
     const next = { ...values, [field]: value } as Values;
     setValues(next);
     if (errors[field]) setErrors((current) => ({ ...current, [field]: validateField(field, next) }));
-    if (field === "stepChoice" && value === "done") setErrors((current) => ({ ...current, newStep: undefined }));
+    if (field === "stepChoice" && value !== "replace") setErrors((current) => ({ ...current, newStep: undefined }));
   }
 
   function submit(event: React.FormEvent) {
@@ -162,7 +163,7 @@ export function ConnectReadingForm({
         newStep: newStepRef,
       };
       const first = order.find((field) => nextErrors[field]);
-      if (first) fieldRefs[first]?.current?.focus();
+      if (first) focusField(fieldRefs[first]?.current);
       return;
     }
 
@@ -181,16 +182,14 @@ export function ConnectReadingForm({
         ),
       );
     } else {
-      const step: NextStepAction | undefined = nextStepMode
-        ? values.stepChoice === "replace"
-          ? { kind: "replace", text: values.newStep }
-          : { kind: "done" }
-        : undefined;
-      const stepMessage = step
-        ? step.kind === "done"
-          ? " Your next step is marked done."
-          : " Your next step was replaced."
-        : "";
+      const step: NextStepAction | undefined = !currentStep
+        ? undefined
+        : values.stepChoice === "done"
+          ? { kind: "done" }
+          : values.stepChoice === "replace"
+            ? { kind: "replace", text: values.newStep }
+            : undefined;
+      const stepMessage = step ? (step.kind === "done" ? " Next step marked done." : " Next step replaced.") : "";
       const { persisted, reading: saved } = connectReading(
         thread.id,
         { ...values, relationship: values.relationship as ConnectionRelationship },
@@ -215,16 +214,6 @@ export function ConnectReadingForm({
 
   return (
     <form noValidate onSubmit={submit}>
-      {nextStepMode && thread.nextStep ? (
-        <div className="mb-6 border-l-[3px] border-accent bg-paper-raised px-4 py-3">
-          <p className="kicker">Your next step</p>
-          <p className="mt-1 text-[1.0625rem]">{thread.nextStep.text}</p>
-          <p className="mt-1 text-[0.875rem] text-ink-muted">
-            Add what you found below. Your next step changes only when this reading is saved.
-          </p>
-        </div>
-      ) : null}
-
       {/* Ruled journal entries, as on the first visit. */}
       <fieldset className="entry">
         <legend className="sr-only">The reading</legend>
@@ -247,7 +236,7 @@ export function ConnectReadingForm({
             <p className="text-[0.875rem] font-semibold">Relationship</p>
             <p className="mt-1 font-mono text-[12.5px] italic text-accent">raised this question</p>
             <p className="mt-1 text-[0.875rem] text-ink-muted">
-              This is the reading that started the thread, so its relationship stays the same.
+              This is the reading that started the map, so its relationship stays the same.
             </p>
           </div>
         ) : (
@@ -269,11 +258,11 @@ export function ConnectReadingForm({
 
       <div className="entry" data-tour="note">
         <TextArea
-          label={editingOriginal ? "Notes" : "What does it contribute?"}
+          label={editingOriginal ? "Notes" : "How does it change your thinking?"}
           hint={
             editingOriginal
               ? "Anything you want to remember about this reading."
-              : "How it changes your thinking. One sentence is enough. Try: “I originally thought… After reading this…”"
+              : "One sentence is enough. Try: “I originally thought… After reading this…”"
           }
           placeholder={editingOriginal ? undefined : "I originally thought… After reading this…"}
           value={values.note}
@@ -286,29 +275,38 @@ export function ConnectReadingForm({
         />
       </div>
 
-      {nextStepMode && thread.nextStep && !reading ? (
+      {currentStep ? (
         <div className="entry space-y-4">
+          <div className="border-l-[3px] border-accent bg-paper-raised px-4 py-3">
+            <p className="mono-label">Your next step</p>
+            <p className="mt-1 font-serif text-[1.25rem] leading-snug">{currentStep.text}</p>
+          </div>
           <RadioGroup
-            legend="And your next step?"
+            legend="When this reading is saved"
+            hint="Your next step changes only if the reading saves."
             name="step"
             options={[
-              { value: "done" as const, label: "Mark my next step done" },
-              { value: "replace" as const, label: "Replace it with a new next step" },
+              { value: "keep" as const, label: "Keep it" },
+              { value: "done" as const, label: "Mark it done" },
+              { value: "replace" as const, label: "Replace it" },
             ]}
             value={values.stepChoice}
             onChange={(value) => change("stepChoice", value)}
             required
+            inline
           />
           {values.stepChoice === "replace" ? (
             <div className="border-l border-line pl-4">
-              <TextField
+              <TextArea
                 label="New next step"
+                hint="One concrete thing, like 'Read chapter 3' or 'Find an article on…'."
                 value={values.newStep}
                 onChange={(value) => change("newStep", value)}
                 error={errors.newStep}
                 required
+                rows={2}
                 counterMax={LIMITS.nextStep}
-                inputRef={newStepRef}
+                textareaRef={newStepRef}
               />
             </div>
           ) : null}

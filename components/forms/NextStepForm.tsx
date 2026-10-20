@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { saveFlash, setFlash } from "@/lib/flash";
 import { threadPath, type ReturnTo } from "@/lib/navigation";
 import { markNextStepDone, setNextStep } from "@/lib/threads";
 import type { Thread } from "@/lib/types";
 import { LIMITS, validateNextStep } from "@/lib/validation";
 import { Button, ButtonLink } from "../ui/Button";
-import { TextArea } from "../ui/Field";
+import { focusField, TextArea } from "../ui/Field";
 
 /**
  * One current next step per thread: save, change, or mark it done. The next step changes only when
@@ -39,8 +40,8 @@ export function NextStepForm({
     event.preventDefault();
     const nextError = validateNextStep(text);
     if (nextError) {
-      setError(nextError);
-      fieldRef.current?.focus();
+      flushSync(() => setError(nextError));
+      focusField(fieldRef.current);
       return;
     }
     const { persisted } = setNextStep(thread.id, text);
@@ -62,7 +63,7 @@ export function NextStepForm({
       <div data-tour="next-step">
         <TextArea
           label="What will you read or think about next?"
-          hint="One concrete thing, like 'Read chapter 3' or 'Find an article on…'."
+          hint="One concrete thing, like 'Read chapter 3' or 'Find an article on…'. It will be waiting on your map."
           value={text}
           onChange={(value) => {
             setText(value);
@@ -86,7 +87,7 @@ export function NextStepForm({
         ) : null}
         <ButtonLink
           href={cancelHref}
-          variant="quiet"
+          variant="secondary"
           onClick={() => {
             setText(thread.nextStep?.text ?? "");
             setError(undefined);

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { SESSION_ONLY, setFlash, useFlash, type Flash } from "@/lib/flash";
 import { plural } from "@/lib/format";
 import { connectPath, nextStepPath } from "@/lib/navigation";
@@ -17,7 +18,7 @@ import { PageLoading, ThreadNotFound } from "../PageStates";
 import { ThreadExplorer } from "../thread/ThreadExplorer";
 import { Button, ButtonLink } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
-import { TextArea } from "../ui/Field";
+import { focusField, TextArea } from "../ui/Field";
 import { Notice } from "../ui/Notice";
 
 const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -36,7 +37,7 @@ const deletedHere = new Set<string>();
 export function ThreadPageView() {
   const { id } = useParams<{ id: string }>();
   const store = useStore();
-  if (store.status === "loading") return <PageLoading label="Loading this thread…" />;
+  if (store.status === "loading") return <PageLoading label="Loading this map…" />;
   const thread = getThread(store.data, id);
   if (!thread) return deletedHere.has(id) ? <PageLoading label="Going home…" /> : <ThreadNotFound />;
   return <ThreadPage key={thread.id} thread={thread} isFirst={store.data.threads.length === 1} />;
@@ -86,8 +87,8 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
     event.preventDefault();
     const error = validateQuestion(questionDraft);
     if (error) {
-      setQuestionError(error);
-      questionFieldRef.current?.focus();
+      flushSync(() => setQuestionError(error));
+      focusField(questionFieldRef.current);
       return;
     }
     const { persisted } = updateQuestion(thread.id, questionDraft);
@@ -106,10 +107,10 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
     setFlash(
       "home",
       persisted
-        ? { message: "Thread deleted.", tone: "success" }
+        ? { message: "Map deleted.", tone: "success" }
         : {
             message:
-              "Thread deleted for this session. This browser didn't let us save the change, so it may come back after you refresh.",
+              "Map deleted for this session. This browser didn't let us save the change, so it may come back after you refresh.",
             tone: "warning",
           },
     );
@@ -218,20 +219,21 @@ function ThreadPage({ thread, isFirst }: { thread: Thread; isFirst: boolean }) {
       </div>
 
 
-      <div className="mt-12 border-t border-line pt-5">
+      {/* Right-aligned, away from where the connect form's save button sat, so it isn't under the pointer after saving. */}
+      <div className="mt-12 flex justify-end border-t border-line pt-5">
         <Button variant="danger" className="min-h-10 px-5 text-[0.875rem]" onClick={() => setConfirmDelete(true)}>
-          Delete thread
+          Delete map
         </Button>
       </div>
 
       <ConfirmDialog
         open={confirmDelete}
-        title="Delete this thread?"
-        confirmLabel="Delete thread"
+        title="Delete this map?"
+        confirmLabel="Delete map"
         onConfirm={confirmDeletion}
         onCancel={() => setConfirmDelete(false)}
       >
-        Delete this thread, its {plural(thread.readings.length, "reading")} and notes? This can&apos;t be undone.
+        Delete this map, its {plural(thread.readings.length, "reading")} and notes? This can&apos;t be undone.
       </ConfirmDialog>
     </div>
   );

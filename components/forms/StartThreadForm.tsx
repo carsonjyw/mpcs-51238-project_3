@@ -18,7 +18,7 @@ import {
   type Errors,
 } from "@/lib/validation";
 import { Button, ButtonLink } from "../ui/Button";
-import { TextArea } from "../ui/Field";
+import { focusField, TextArea } from "../ui/Field";
 import { ReadingDetailsFields } from "./ReadingDetailsFields";
 
 export type StartValues = ReadingDetails & { question: string };
@@ -129,7 +129,7 @@ export function StartThreadForm({
           : nextErrors.url
             ? urlRef.current
             : questionRef.current;
-      first?.focus();
+      focusField(first);
       return;
     }
 

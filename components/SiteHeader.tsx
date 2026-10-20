@@ -38,7 +38,7 @@ export function SiteHeader() {
   // Hidden until the first thread exists: on the first visit the start form is already on screen.
   const hasThreads = store.status === "ready" && store.data.threads.length > 0;
 
-  // "+ New thread" returns to the thread being viewed when cancelled.
+  // "+ New map" returns to the thread being viewed when cancelled.
   const threadMatch = pathname.match(/^\/threads\/([^/]+)/);
   const currentThreadId = threadMatch && threadMatch[1] !== "new" ? decodeURIComponent(threadMatch[1]) : undefined;
 
@@ -51,7 +51,7 @@ export function SiteHeader() {
           aria-current={pathname === "/threads/new" ? "page" : undefined}
           className="inline-flex min-h-9 items-center rounded-full border border-ink px-4 text-[0.875rem] font-medium text-ink hover:bg-ink hover:text-paper aria-[current=page]:bg-ink aria-[current=page]:text-paper"
         >
-          <span aria-hidden="true">+&nbsp;</span>New thread
+          <span aria-hidden="true">+&nbsp;</span>New map
         </Link>
       ) : (
         <span className="folio hidden sm:inline">A journal for following questions</span>

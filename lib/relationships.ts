@@ -10,7 +10,7 @@ export const RELATIONSHIPS: Record<
 > = {
   raised: {
     label: "Raised this question",
-    description: "The reading that started this thread.",
+    description: "The reading that started this map.",
     line: "neutral",
   },
   supports: {

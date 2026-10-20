@@ -44,7 +44,7 @@ export function validateQuestion(question: string): string | undefined {
 
 export function validateContribution(note: string): string | undefined {
   const value = note.trim();
-  if (!value) return "Say what this reading adds or challenges. One sentence is enough.";
+  if (!value) return "Write how this reading changes your thinking. One sentence is enough.";
   if (value.length > LIMITS.note) return `Keep this note under ${LIMITS.note} characters.`;
 }
 
