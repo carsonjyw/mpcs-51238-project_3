@@ -56,9 +56,9 @@ export function ConfirmDialog({
         onCancel();
         restoreFocus();
       }}
-      className="m-auto w-[min(32rem,calc(100%-2rem))] rounded-xl border border-line bg-paper-raised p-6 text-ink shadow-xl backdrop:bg-ink/40"
+      className="m-auto w-[min(32rem,calc(100%-2rem))] border border-ink bg-paper p-6 text-ink backdrop:bg-ink/40"
     >
-      <h2 id={titleId} className="text-2xl font-semibold">
+      <h2 id={titleId} className="text-[1.875rem]">
         {title}
       </h2>
       <div id={bodyId} className="mt-3 text-ink-muted">

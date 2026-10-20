@@ -5,13 +5,13 @@ import { Button, ButtonLink } from "../ui/Button";
 
 export function ReadingMeta({ reading }: { reading: Reading }) {
   return (
-    <p className="text-[0.95rem] text-ink-muted">
+    <p className="mt-1 font-mono text-[12px] uppercase tracking-[0.05em] text-ink-muted">
       {READING_TYPES[reading.type]}
       {reading.author ? ` · by ${reading.author}` : ""}
       {reading.url ? (
         <>
           {" · "}
-          <a href={reading.url} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-4">
+          <a href={reading.url} target="_blank" rel="noopener noreferrer" className="textlink font-sans normal-case tracking-normal">
             Open link<span className="sr-only"> to {reading.title} (opens in a new tab)</span>
           </a>
         </>
@@ -25,7 +25,7 @@ export function ReadingNote({ reading }: { reading: Reading }) {
   const original = isOriginal(reading);
   return (
     <div className="mt-3">
-      <p className="text-[0.8rem] font-semibold uppercase tracking-wide text-ink-muted">
+      <p className="mono-label">
         {original ? "Notes" : "What it contributes"}
       </p>
       {reading.note ? (

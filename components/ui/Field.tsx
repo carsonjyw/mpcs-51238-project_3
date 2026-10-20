@@ -2,28 +2,39 @@
 
 import { useId, type ReactNode, type Ref } from "react";
 
-const control =
-  "block w-full rounded-lg border bg-paper-raised px-3 py-2.5 text-base text-ink placeholder:text-ink-muted/80";
-
-function controlClasses(invalid: boolean) {
-  return `${control} ${invalid ? "border-danger border-2" : "border-line-strong"}`;
-}
-
 export function FieldError({ id, children }: { id: string; children?: ReactNode }) {
   if (!children) return null;
   return (
-    <p id={id} className="mt-1.5 flex gap-1.5 text-[0.875rem] font-semibold text-danger">
+    <p id={id} className="mt-2 flex gap-1.5 text-[0.875rem] font-semibold text-danger">
       <span aria-hidden="true">!</span>
       <span>{children}</span>
     </p>
   );
 }
 
-function Label({ htmlFor, required, children }: { htmlFor: string; required?: boolean; children: ReactNode }) {
+/** Concept A label: small sans, with an optional journal number in mono oxblood. */
+function Label({
+  htmlFor,
+  required,
+  number,
+  children,
+}: {
+  htmlFor: string;
+  required?: boolean;
+  number?: string;
+  children: ReactNode;
+}) {
   return (
-    <label htmlFor={htmlFor} className="mb-1.5 block text-[0.9375rem] font-semibold text-ink">
-      {children}
-      {required ? null : <span className="font-normal text-ink-muted"> (optional)</span>}
+    <label htmlFor={htmlFor} className="flex items-baseline gap-3 text-[0.875rem] font-semibold text-ink">
+      {number ? (
+        <span aria-hidden="true" className="font-mono text-[0.75rem] font-normal text-accent">
+          {number}
+        </span>
+      ) : null}
+      <span>
+        {children}
+        {required ? null : <span className="font-normal text-ink-muted"> (optional)</span>}
+      </span>
     </label>
   );
 }
@@ -33,7 +44,7 @@ function Counter({ length, max }: { length: number; max: number }) {
   const over = length > max;
   if (length < max * 0.8) return null;
   return (
-    <p className={`mt-1 text-right text-[0.8125rem] ${over ? "font-semibold text-danger" : "text-ink-muted"}`}>
+    <p className={`mt-1 text-right font-mono text-[0.75rem] ${over ? "font-semibold text-danger" : "text-ink-muted"}`}>
       {length} / {max}
     </p>
   );
@@ -53,6 +64,19 @@ interface BaseFieldProps {
   required?: boolean;
   /** Shows a live character count against this limit (the field still accepts more, and validation explains). */
   counterMax?: number;
+  /** Journal number shown before the label, such as "01". */
+  number?: string;
+  /** The larger serif writing line used for the two first-visit fields. */
+  large?: boolean;
+}
+
+function Hint({ id, children }: { id: string; children?: ReactNode }) {
+  if (!children) return null;
+  return (
+    <p id={id} className="mt-1 text-[0.8125rem] text-ink-muted">
+      {children}
+    </p>
+  );
 }
 
 export function TextField({
@@ -63,6 +87,8 @@ export function TextField({
   hint,
   required,
   counterMax,
+  number,
+  large,
   inputRef,
   type = "text",
   autoComplete = "off",
@@ -78,14 +104,10 @@ export function TextField({
   const errorId = `${id}-error`;
   return (
     <div>
-      <Label htmlFor={id} required={required}>
+      <Label htmlFor={id} required={required} number={number}>
         {label}
       </Label>
-      {hint ? (
-        <p id={hintId} className="-mt-0.5 mb-1.5 text-[0.875rem] text-ink-muted">
-          {hint}
-        </p>
-      ) : null}
+      <Hint id={hintId}>{hint}</Hint>
       <input
         ref={inputRef}
         id={id}
@@ -97,7 +119,7 @@ export function TextField({
         aria-describedby={describedBy(hint ? hintId : undefined, error ? errorId : undefined)}
         aria-required={required || undefined}
         autoComplete={autoComplete}
-        className={controlClasses(!!error)}
+        className={`line-input mt-2 ${large ? "large" : ""}`}
       />
       {counterMax ? <Counter length={value.trim().length} max={counterMax} /> : null}
       <FieldError id={errorId}>{error}</FieldError>
@@ -113,13 +135,15 @@ export function TextArea({
   hint,
   required,
   counterMax,
+  number,
+  large,
   rows = 3,
   textareaRef,
   children,
 }: BaseFieldProps & {
   rows?: number;
   textareaRef?: Ref<HTMLTextAreaElement>;
-  /** Extra content after the field and its error, such as starter chips. */
+  /** Extra content after the field and its error, such as starter questions. */
   children?: ReactNode;
 }) {
   const id = useId();
@@ -127,14 +151,10 @@ export function TextArea({
   const errorId = `${id}-error`;
   return (
     <div>
-      <Label htmlFor={id} required={required}>
+      <Label htmlFor={id} required={required} number={number}>
         {label}
       </Label>
-      {hint ? (
-        <p id={hintId} className="-mt-0.5 mb-1.5 text-[0.875rem] text-ink-muted">
-          {hint}
-        </p>
-      ) : null}
+      <Hint id={hintId}>{hint}</Hint>
       <textarea
         ref={textareaRef}
         id={id}
@@ -144,7 +164,7 @@ export function TextArea({
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(hint ? hintId : undefined, error ? errorId : undefined)}
         aria-required={required || undefined}
-        className={`${controlClasses(!!error)} resize-y`}
+        className={`line-input mt-2 resize-y ${large ? "large" : ""}`}
       />
       {counterMax ? <Counter length={value.trim().length} max={counterMax} /> : null}
       <FieldError id={errorId}>{error}</FieldError>
@@ -181,19 +201,56 @@ export function RadioGroup<V extends string>({
   error?: ReactNode;
   required?: boolean;
   inline?: boolean;
-  /** Small pills with a small legend, for secondary choices such as reading type. */
+  /** Concept A toggle pill for secondary choices such as reading type (legend kept for screen readers). */
   compact?: boolean;
   firstInputRef?: Ref<HTMLInputElement>;
 }) {
   const id = useId();
   const errorId = `${id}-error`;
+
+  if (compact) {
+    return (
+      <fieldset aria-describedby={error ? errorId : undefined} className="inline-flex">
+        <legend className="sr-only">{legend}</legend>
+        <div className="inline-flex rounded-full border border-line p-0.5 text-[0.8125rem]">
+          {options.map((option, index) => {
+            const optionId = `${id}-${option.value}`;
+            const checked = value === option.value;
+            return (
+              <label
+                key={option.value}
+                htmlFor={optionId}
+                className={`cursor-pointer rounded-full px-3 py-1 has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-accent ${
+                  checked ? "bg-ink text-paper" : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                <input
+                  ref={index === 0 ? firstInputRef : undefined}
+                  id={optionId}
+                  type="radio"
+                  name={`${id}-${name}`}
+                  value={option.value}
+                  checked={checked}
+                  onChange={() => onChange(option.value)}
+                  className="sr-only"
+                />
+                {option.label}
+              </label>
+            );
+          })}
+        </div>
+        <FieldError id={errorId}>{error}</FieldError>
+      </fieldset>
+    );
+  }
+
   return (
     <fieldset aria-describedby={error ? errorId : undefined}>
-      <legend className={compact ? "mb-1.5 text-[0.875rem] text-ink-muted" : "mb-2 text-[0.9375rem] font-semibold text-ink"}>
+      <legend className="mb-2 text-[0.875rem] font-semibold text-ink">
         {legend}
         {required ? null : <span className="font-normal text-ink-muted"> (optional)</span>}
       </legend>
-      <div className={inline ? "flex flex-wrap gap-2" : "grid gap-2"}>
+      <div className={inline ? "flex flex-wrap gap-x-6 gap-y-2" : "border-t border-line"}>
         {options.map((option, index) => {
           const optionId = `${id}-${option.value}`;
           const checked = value === option.value;
@@ -201,9 +258,9 @@ export function RadioGroup<V extends string>({
             <label
               key={option.value}
               htmlFor={optionId}
-              className={`flex cursor-pointer rounded-lg border ${compact ? "items-center gap-2 px-3 py-1.5 text-[0.9375rem]" : "gap-3 px-3 py-2.5"} ${
-                checked ? "border-accent bg-accent-soft" : "border-line bg-paper-raised hover:border-line-strong"
-              } ${error ? "border-danger" : ""}`}
+              className={`flex cursor-pointer gap-3 py-3 ${inline ? "" : "border-b border-line"} ${
+                checked ? "text-ink" : "text-ink hover:bg-paper-raised/60"
+              }`}
             >
               <input
                 ref={index === 0 ? firstInputRef : undefined}
@@ -213,11 +270,11 @@ export function RadioGroup<V extends string>({
                 value={option.value}
                 checked={checked}
                 onChange={() => onChange(option.value)}
-                className={`${compact ? "" : "mt-1"} size-4 shrink-0 accent-accent`}
+                className="mt-1 size-4 shrink-0 accent-ink"
                 aria-describedby={option.description ? `${optionId}-description` : undefined}
               />
               <span>
-                <span className={`flex items-center gap-2 ${compact ? "" : "font-semibold"}`}>
+                <span className={`flex items-center gap-2 font-medium ${checked ? "font-semibold" : ""}`}>
                   {option.marker}
                   {option.label}
                 </span>

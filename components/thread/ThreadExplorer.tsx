@@ -115,7 +115,8 @@ export function ThreadExplorer({
         }
       }}
     >
-      <div>
+      {/* The map sits on a plate, as in the first-visit preview. */}
+      <div className="bg-paper-sunk px-5 pb-8 pt-10 sm:px-12 sm:pt-14">
         <div role="group" aria-label={`Map: readings connected to “${thread.question}”`}>
           <ThreadMap
             thread={thread}
@@ -129,12 +130,12 @@ export function ThreadExplorer({
           />
         </div>
         {relationships.some((relationship) => relationship !== "raised") ? (
-          <div className="mt-4">
+          <div className="mt-8">
             <MapLegend relationships={relationships} />
           </div>
         ) : null}
         {showPanel ? null : (
-          <p className="mt-4 text-center text-[0.875rem] text-ink-muted">Select a reading to see its details.</p>
+          <p className="fine mt-8 text-center">Select the book to see its details.</p>
         )}
       </div>
       {showPanel ? (
@@ -142,7 +143,7 @@ export function ThreadExplorer({
           id={panelId}
           aria-label={selected ? undefined : "Reading details"}
           aria-labelledby={selected ? `${panelId}-title` : undefined}
-          className="self-start rounded-xl border border-line bg-paper-raised p-5"
+          className="self-start border border-ink bg-paper-raised p-5"
         >
           {selected ? (
             <>
@@ -151,7 +152,7 @@ export function ThreadExplorer({
                 id={`${panelId}-title`}
                 ref={panelHeadingRef}
                 tabIndex={-1}
-                className="book-title mt-2 text-xl"
+                className="book-title mt-2 text-[1.625rem] leading-[1.1]"
               >
                 {selected.title}
               </SubHeading>
@@ -187,16 +188,14 @@ export function ThreadExplorer({
   );
 
   const listView = (
-    <ol className="space-y-4">
+    <ol className="border-t border-ink">
       {thread.readings.map((reading) => (
         <li
           key={reading.id}
-          className={`rounded-xl border bg-paper-raised p-5 ${
-            openReadingId === reading.id ? "border-accent ring-2 ring-accent fade-in" : "border-line"
-          }`}
+          className={`border-b border-line py-5 ${openReadingId === reading.id ? "fade-in bg-paper-raised px-4" : ""}`}
         >
           <RelationshipLabel relationship={reading.relationship} />
-          <SubHeading className="book-title mt-2 text-xl">{reading.title}</SubHeading>
+          <SubHeading className="book-title mt-2 text-[1.625rem] leading-[1.1]">{reading.title}</SubHeading>
           <ReadingMeta reading={reading} />
           <ReadingNote reading={reading} />
           {readOnly ? null : (
@@ -213,24 +212,24 @@ export function ThreadExplorer({
 
   return (
     <section aria-labelledby={headingId}>
-      <div className={`mb-4 flex flex-wrap items-center gap-3 ${quietHeading ? "justify-center" : "justify-between"}`}>
+      <div
+        className={`flex flex-wrap items-center gap-3 ${quietHeading ? "border-b border-line" : "mb-4 justify-between"}`}
+      >
         <Heading id={headingId} ref={regionHeadingRef} tabIndex={-1} className={quietHeading ? "sr-only" : "text-2xl"}>
           Readings <span className="font-sans text-base font-normal text-ink-muted">({thread.readings.length})</span>
         </Heading>
         {showBoth ? null : (
-          <div
-            role="group"
-            aria-label="View"
-            className="inline-flex rounded-lg border border-line-strong bg-paper-raised p-1"
-          >
+          <div role="group" aria-label="View" className="flex gap-[22px]">
             {(["map", "list"] as const).map((option) => (
               <button
                 key={option}
                 type="button"
                 aria-pressed={view === option}
                 onClick={() => chooseView(option)}
-                className={`min-h-8 rounded-md px-3 text-[0.875rem] font-semibold ${
-                  view === option ? "bg-accent text-white" : "text-ink hover:bg-paper-sunk"
+                className={`min-h-10 py-2.5 text-[0.875rem] ${
+                  view === option
+                    ? "font-semibold text-ink shadow-[inset_0_-2px_0_var(--color-ink)]"
+                    : "text-ink-muted hover:text-ink"
                 }`}
               >
                 {option === "map" ? "Map" : "List"}

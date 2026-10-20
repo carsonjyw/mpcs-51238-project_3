@@ -13,7 +13,7 @@ const typeOptions = (Object.keys(READING_TYPES) as ReadingType[]).map((value) =>
   label: READING_TYPES[value],
 }));
 
-/** Title and type are always visible; author and link sit under "Add details (optional)". */
+/** The title on a writing line; below it, a compact Book/Article toggle and "+ Author or link (optional)". */
 export function ReadingDetailsFields({
   values,
   errors,
@@ -24,7 +24,8 @@ export function ReadingDetailsFields({
   authorRef,
   urlRef,
   titleLabel = "Title",
-  compact = false,
+  number,
+  large = false,
 }: {
   values: ReadingDetails;
   errors: DetailsErrors;
@@ -35,36 +36,40 @@ export function ReadingDetailsFields({
   authorRef?: Ref<HTMLInputElement>;
   urlRef?: Ref<HTMLInputElement>;
   titleLabel?: string;
-  /** First-visit layout: compact type pills and a one-line details toggle. */
-  compact?: boolean;
+  /** Journal number for the title label, such as "01". */
+  number?: string;
+  large?: boolean;
 }) {
   return (
-    <div className={compact ? "space-y-4" : "space-y-5"}>
+    <div>
       <TextField
         label={titleLabel}
+        number={number}
+        large={large}
         value={values.title}
         onChange={(value) => onChange("title", value)}
         error={errors.title}
         required
         inputRef={titleRef}
       />
-      <RadioGroup
-        legend="Type"
-        name="type"
-        options={typeOptions}
-        value={values.type}
-        onChange={(value) => onChange("type", value)}
-        required
-        inline
-        compact={compact}
-      />
       <Disclosure
-        summary={compact ? "Add author or link (optional)" : "Add details (optional)"}
-        caption={compact ? undefined : "Author and link"}
+        className="mt-3"
+        summary="Author or link (optional)"
         open={detailsOpen}
         onOpenChange={onDetailsOpenChange}
+        before={
+          <RadioGroup
+            legend="Type"
+            name="type"
+            options={typeOptions}
+            value={values.type}
+            onChange={(value) => onChange("type", value)}
+            required
+            compact
+          />
+        }
       >
-        <div className="mt-2 space-y-4 border-l border-line pl-4">
+        <div className="mt-3 space-y-5 border-l border-line pl-4">
           <TextField
             label="Author"
             value={values.author}

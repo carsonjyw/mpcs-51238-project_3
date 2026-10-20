@@ -3,7 +3,7 @@ import { ButtonLink } from "./ui/Button";
 /** Shown while saved data is read, so returning users never see the first-visit form flash. */
 export function PageLoading({ label = "Loading your threads…" }: { label?: string }) {
   return (
-    <div className="mx-auto max-w-2xl" aria-busy="true">
+    <div className="max-w-2xl" aria-busy="true">
       <p role="status" className="sr-only">
         {label}
       </p>
@@ -28,8 +28,8 @@ export function NotFoundMessage({
   actionLabel: string;
 }) {
   return (
-    <div className="mx-auto max-w-2xl rounded-xl border border-line bg-paper-raised p-6 sm:p-8">
-      <h1 className="text-3xl font-semibold">{title}</h1>
+    <div className="max-w-2xl border-t border-ink pt-6">
+      <h1 className="text-[2.25rem]">{title}</h1>
       <p className="mt-3 text-ink-muted">{body}</p>
       <ButtonLink href={actionHref} className="mt-6">
         {actionLabel}

@@ -2,40 +2,41 @@
 
 import { useId, type ReactNode } from "react";
 
-/** A button that shows and hides a region. Open state is controlled so forms can force it open. */
+/**
+ * A text-link button that shows and hides a region (Concept A). Open state is controlled so forms can
+ * force it open. `before` renders on the same line as the button, such as a compact toggle.
+ */
 export function Disclosure({
   summary,
-  caption,
   open,
   onOpenChange,
   children,
+  before,
   className = "",
 }: {
   summary: ReactNode;
-  caption?: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
+  before?: ReactNode;
   className?: string;
 }) {
   const id = useId();
   return (
     <div className={className}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => onOpenChange(!open)}
-        className="group flex min-h-11 w-full items-center gap-2 rounded-lg py-1.5 text-left text-[0.9375rem] font-semibold text-accent hover:underline hover:underline-offset-4"
-      >
-        <span aria-hidden="true" className={`inline-block text-[0.75rem] transition-transform ${open ? "rotate-90" : ""}`}>
-          ▸
-        </span>
-        <span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {before}
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => onOpenChange(!open)}
+          className="textlink min-h-9 text-left text-[0.8125rem]"
+        >
+          <span aria-hidden="true">{open ? "− " : "+ "}</span>
           {summary}
-          {caption ? <span className="block text-[0.875rem] font-normal text-ink-muted">{caption}</span> : null}
-        </span>
-      </button>
+        </button>
+      </div>
       <div id={id} hidden={!open}>
         {children}
       </div>

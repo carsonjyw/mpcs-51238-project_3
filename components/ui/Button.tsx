@@ -4,13 +4,14 @@ import type { ComponentProps } from "react";
 type Variant = "primary" | "secondary" | "quiet" | "danger";
 
 const base =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-2 text-[0.9375rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full py-2 text-[0.9375rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
 
+/** Concept A: an ink pill for the main action; outlined pills for the rest. */
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-hover",
-  secondary: "border border-line-strong bg-paper-raised text-ink hover:bg-paper-sunk",
-  quiet: "text-accent underline-offset-4 hover:underline",
-  danger: "border border-danger bg-paper-raised text-danger hover:bg-danger-soft",
+  primary: "btn-ink bg-ink px-6 text-paper hover:bg-[#33302a]",
+  secondary: "border border-ink px-6 text-ink hover:bg-ink hover:text-paper",
+  quiet: "px-0 font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-ink",
+  danger: "border border-danger px-6 text-danger hover:bg-danger hover:text-paper",
 };
 
 export function buttonClasses(variant: Variant = "primary", className = "") {

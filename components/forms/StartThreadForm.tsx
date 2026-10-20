@@ -52,7 +52,7 @@ function validate(values: StartValues): Errors<Field> {
 
 /** The start form: what are you reading, and what question did it raise. */
 export function StartThreadForm({
-  submitLabel = "Create my first map",
+  submitLabel = "Begin the map",
   cancelHref,
   titleRef: externalTitleRef,
   handle,
@@ -145,57 +145,73 @@ export function StartThreadForm({
   const savesHere = store.status === "ready" && store.persistence === "saved";
 
   return (
-    <form noValidate onSubmit={submit} className="space-y-5">
-      <ReadingDetailsFields
-        values={values}
-        errors={errors}
-        onChange={change}
-        detailsOpen={detailsOpen}
-        onDetailsOpenChange={setDetailsOpen}
-        titleRef={titleRef}
-        authorRef={authorRef}
-        urlRef={urlRef}
-        titleLabel="What are you reading?"
-        compact
-      />
+    <form noValidate onSubmit={submit}>
+      {/* Two numbered journal entries, each on a writing line. */}
+      <div className="entry">
+        <ReadingDetailsFields
+          values={values}
+          errors={errors}
+          onChange={change}
+          detailsOpen={detailsOpen}
+          onDetailsOpenChange={setDetailsOpen}
+          titleRef={titleRef}
+          authorRef={authorRef}
+          urlRef={urlRef}
+          titleLabel="The reading"
+          number="01"
+          large
+        />
+      </div>
 
-      <TextArea
-        label="What question did it raise?"
-        value={values.question}
-        onChange={(value) => change("question", value)}
-        error={errors.question}
-        required
-        rows={2}
-        counterMax={LIMITS.question}
-        textareaRef={questionRef}
-      >
-        {values.question.trim() === "" ? (
-          <div role="group" aria-label="Question starters" className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="text-[0.8125rem] text-ink-muted">Or start with:</span>
-            {STARTERS.map((text) => (
-              <button
-                key={text}
-                type="button"
-                onClick={() => applyStarter(text)}
-                className="min-h-9 rounded-full border border-line px-3 text-[0.875rem] text-ink hover:border-accent hover:bg-accent-soft"
-              >
-                {text}
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </TextArea>
+      <div className="entry">
+        <TextArea
+          label="The question it raised"
+          number="02"
+          large
+          value={values.question}
+          onChange={(value) => change("question", value)}
+          error={errors.question}
+          required
+          rows={2}
+          counterMax={LIMITS.question}
+          textareaRef={questionRef}
+        >
+          {values.question.trim() === "" ? (
+            <div
+              role="group"
+              aria-label="Question starters"
+              className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[0.8125rem] text-ink-muted"
+            >
+              <span>Try:</span>
+              {STARTERS.map((text, index) => (
+                <span key={text} className="whitespace-nowrap">
+                  <button type="button" onClick={() => applyStarter(text)} className="textlink min-h-8">
+                    {text}
+                  </button>
+                  {index < STARTERS.length - 1 ? (
+                    <span aria-hidden="true" className="ml-3 text-line-strong">
+                      /
+                    </span>
+                  ) : null}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </TextArea>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pt-1">
-        <Button type="submit">{submitLabel}</Button>
+      <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Button type="submit">
+          {submitLabel} <span aria-hidden="true">→</span>
+        </Button>
         {cancelHref ? (
           <ButtonLink href={cancelHref} variant="secondary" onClick={reset}>
             Cancel
           </ButtonLink>
         ) : null}
-        <p className="text-[0.8125rem] text-ink-muted">
+        <p className="fine">
           {savesHere
-            ? "Stays in this browser. No account needed."
+            ? "Stays in this browser · no account"
             : "No account needed. This browser isn't allowing storage, so your map will last only for this session."}
         </p>
       </div>

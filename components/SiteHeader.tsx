@@ -2,30 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-// Step 4 (first visit) header. The "+ New thread" link returns with the rest of the
-// navigation in a later step; the full version is in pending/components/SiteHeader.tsx.
-
-const brandClasses = "group inline-flex items-center gap-2 font-serif text-[1.3rem] font-medium text-ink";
-
-/** A tiny map: one reading connected to one question. */
-function Mark() {
-  return (
-    <svg aria-hidden="true" width="18" height="22" viewBox="0 0 18 22" className="text-accent">
-      <rect x="4.5" y="1" width="9" height="6" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <line x1="9" y1="7" x2="9" y2="13" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="9" cy="17" r="4" fill="currentColor" />
-    </svg>
-  );
-}
+import { newThreadPath } from "@/lib/navigation";
+import { useStore } from "@/lib/store";
 
 function HeaderFrame({ children }: { children: React.ReactNode }) {
   return (
-    <header className="border-b border-line px-4 sm:px-6">
-      <nav aria-label="Main" className="mx-auto flex min-h-14 max-w-6xl items-center justify-between gap-4">
+    <header className="px-[18px] lg:px-14">
+      <nav aria-label="Main" className="masthead">
         {children}
       </nav>
     </header>
+  );
+}
+
+function Wordmark({ current }: { current?: boolean }) {
+  return (
+    <Link href="/" className="wordmark" aria-current={current ? "page" : undefined}>
+      Reading <i>Map</i>
+    </Link>
   );
 }
 
@@ -33,22 +27,35 @@ function HeaderFrame({ children }: { children: React.ReactNode }) {
 export function SiteHeaderShell() {
   return (
     <HeaderFrame>
-      <Link href="/" className={brandClasses}>
-        <Mark />
-        <span className="group-hover:text-accent">Reading Map</span>
-      </Link>
+      <Wordmark />
     </HeaderFrame>
   );
 }
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const store = useStore();
+  // Hidden until the first thread exists: on the first visit the start form is already on screen.
+  const hasThreads = store.status === "ready" && store.data.threads.length > 0;
+
+  // "+ New thread" returns to the thread being viewed when cancelled.
+  const threadMatch = pathname.match(/^\/threads\/([^/]+)/);
+  const currentThreadId = threadMatch && threadMatch[1] !== "new" ? decodeURIComponent(threadMatch[1]) : undefined;
+
   return (
     <HeaderFrame>
-      <Link href="/" className={brandClasses} aria-current={pathname === "/" ? "page" : undefined}>
-        <Mark />
-        <span className="group-hover:text-accent">Reading Map</span>
-      </Link>
+      <Wordmark current={pathname === "/"} />
+      {hasThreads ? (
+        <Link
+          href={newThreadPath(currentThreadId)}
+          aria-current={pathname === "/threads/new" ? "page" : undefined}
+          className="inline-flex min-h-9 items-center rounded-full border border-ink px-4 text-[0.875rem] font-medium text-ink hover:bg-ink hover:text-paper aria-[current=page]:bg-ink aria-[current=page]:text-paper"
+        >
+          <span aria-hidden="true">+&nbsp;</span>New thread
+        </Link>
+      ) : (
+        <span className="folio hidden sm:inline">A journal for following questions</span>
+      )}
     </HeaderFrame>
   );
 }

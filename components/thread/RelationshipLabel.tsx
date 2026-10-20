@@ -47,8 +47,8 @@ export function RelationshipLabel({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap font-semibold ${textColor[relationship]} ${
-        size === "xs" ? "text-[0.8rem]" : "text-[0.8rem] uppercase tracking-wide"
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap font-mono uppercase tracking-[0.06em] ${textColor[relationship]} ${
+        size === "xs" ? "text-[10.5px]" : "text-[11.5px]"
       }`}
     >
       <LineSample relationship={relationship} width={size === "xs" ? 20 : 28} />
@@ -63,7 +63,7 @@ const LEGEND_ORDER: Relationship[] = ["supports", "challenges", "perspective", "
 export function MapLegend({ relationships }: { relationships: Relationship[] }) {
   const shown = LEGEND_ORDER.filter((relationship) => relationships.includes(relationship));
   return (
-    <ul aria-label="How connections are drawn" className="flex flex-wrap gap-x-5 gap-y-2 text-[0.9rem] text-ink-muted">
+    <ul aria-label="How connections are drawn" className="flex flex-wrap gap-x-5 gap-y-2 font-mono text-[12px] text-ink-muted">
       {shown.map((relationship) => (
         <li key={relationship} className="flex items-center gap-2">
           <LineSample relationship={relationship} />

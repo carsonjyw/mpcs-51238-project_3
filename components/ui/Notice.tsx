@@ -26,7 +26,7 @@ export function Notice({
     <div role="status" aria-live="polite" className={children ? className : "sr-only"}>
       {children ? (
         inline ? (
-          <p className="flex items-center gap-1.5 text-[0.875rem] font-semibold text-success-ink">
+          <p className="flex items-start gap-1.5 font-mono text-[12.5px] leading-[1.45] text-success-ink">
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
               <circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
               <path d="M4.75 8.25 7 10.5l4.25-4.75" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -34,7 +34,7 @@ export function Notice({
             {children}
           </p>
         ) : (
-          <p className={`rounded-lg border px-4 py-3 text-[0.9375rem] font-semibold ${tones[tone]}`}>{children}</p>
+          <p className={`border-l-[3px] px-4 py-3 text-[0.9375rem] font-medium ${tones[tone]}`}>{children}</p>
         )
       ) : null}
     </div>
