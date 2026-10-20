@@ -12,39 +12,50 @@ npm run dev
 
 Then open http://localhost:3000.
 
-## Flows diagram
+## Contents
+
+- [Step 2 — Flows](#step-2--flows)
+- [Step 3 — Onboarding research](#step-3--onboarding-research)
+- [Step 4 — First visit](#step-4--first-visit)
+- [Step 5 — Core flow, usability test, and first-use tour](#step-5--core-flow-usability-test-and-first-use-tour)
+- [Step 6 — Returning experience](#step-6--returning-experience)
+- [Step 7 — Accessibility](#step-7--accessibility)
+- [First-run check](#first-run-check)
+
+## Step 2 — Flows
 
 **Main task:** I add a book and a question it raised → connect another reading and explain what it contributes → save my
 next step → return later and continue exploring with my previous work still saved.
 
-The diagram covers the first visit, the main task, the per-thread map, and the returning-user flow. The full
-specification (fields, validation messages, empty and error states, map behavior, and routes) is in
-[flows.md](flows.md).
+The diagram shows the app as it works now. [flows.md](flows.md) is the original Step 2 specification: fields,
+validation messages, empty and error states, map behavior, routes, and saved data. Later steps changed some details,
+listed under the diagram.
 
 ```mermaid
 flowchart TD
-    OPEN([Open Reading Map at /]) --> LOAD["Read saved data from this device<br/>(brief loading state, no flash of first-visit form)"]
+    OPEN([Open Reading Map at /]) --> LOAD["Read saved data from this browser<br/>(brief loading state)"]
     LOAD --> HAS{Any saved threads?}
 
     %% First visit
-    HAS -- No --> FV["<b>First visit · /</b><br/>Ask a question → Connect readings → Save your next step<br/>Start form: title + question required,<br/>author/link under Add details (optional)"]
-    FV -. optional .-> EX["See an example exploration<br/>(read-only map + list, not saved)"]
-    EX -. collapse .-> FV
+    HAS -- No --> FV["<b>First visit · /</b><br/>Start form: the reading + the question it raised<br/>(author/link optional) · question starters<br/>Example figure beside it → live preview as you type"]
+    FV -. "first time only, skippable" .-> TOUR["Tour chapter<br/>(Skip tour / Escape)"]
+    TOUR -.-> FV
     FV -- Submit --> V1{Title and question valid?}
     V1 -- No --> E1["Errors next to each field<br/>typed text kept"]
     E1 --> FV
     V1 -- "Yes: open the user's first map" --> THREAD
 
     %% Returning
-    HAS -- Yes --> RV["<b>Returning view · /</b><br/>Welcome back + Continue card<br/>(question, next step, last reading, last active)<br/>and other open threads"]
-    RV -- Open a thread --> THREAD
-    RV -- "I did this, add what I found" --> CONNECT
-    RV -- Change next step --> NEXT
+    HAS -- Yes --> RV["<b>Returning view · /</b><br/>Continue card: latest thread's question,<br/>latest reading, next step<br/>+ All your maps (every thread)"]
+    RV -- "Open map / any thread in the list" --> THREAD
+    RV -- Connect another reading --> CONNECT
+    RV -- "Change / save next step" --> NEXT
+    RV -- Mark done --> RV
     RV -- "New thread" --> NEW["<b>/threads/new</b><br/>same start form"]
     NEW -- Submit --> V1
 
     %% Thread hub with map
-    THREAD["<b>Thread · /threads/[id]</b><br/>Map view: question at center,<br/>readings arranged around it,<br/>lines labeled Supports / Challenges /<br/>Adds a new perspective<br/>List view: same content, accessible alternative"]
+    THREAD["<b>Thread · /threads/[id]</b><br/>Map: question with readings around it,<br/>each labeled Supports / Challenges /<br/>Adds a new perspective (own line style)<br/>List: same content as text"]
     THREAD -- "New thread (header)" --> NEW
     THREAD -- Select a reading --> DETAIL["Detail panel<br/>note · Edit · Remove<br/>original reading: Raised this question · Edit only"]
     DETAIL -- Edit --> CONNECT
@@ -57,22 +68,21 @@ flowchart TD
     DELQ -- No --> THREAD
 
     %% Main task: connect
-    THREAD -- Connect another reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship, each option explained · what it contributes<br/>editing the original reading: details only,<br/>relationship stays Raised this question"]
+    THREAD -- Connect another reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship (each option explained)<br/>what it contributes"]
     CONNECT -- Submit --> V2{Valid?}
-    V2 -- No --> E2["Errors next to each field<br/>typed text kept<br/>next step unchanged"]
+    V2 -- No --> E2["Errors next to each field<br/>typed text kept"]
     E2 --> CONNECT
-    V2 -- Yes --> SAVED["Reading saved to thread<br/>if started from 'I did this':<br/>step marked done or replaced in the same save"]
-    SAVED --> THREAD
+    V2 -- Yes --> THREAD
 
     %% Next step
-    THREAD -- "Save / change next step" --> NEXT["<b>/threads/[id]/next-step</b><br/>one current next step"]
+    THREAD -- "Save / change next step" --> NEXT["<b>/threads/[id]/next-step</b><br/>one current next step · Save or Mark done"]
     NEXT -- Submit --> V3{Step written, ≤ 200 chars?}
     V3 -- No --> E3["Error next to field<br/>typed text kept"]
     E3 --> NEXT
-    V3 -- Yes --> THREAD
+    V3 -- "Yes (or Mark done)" --> BACK
 
-    %% Cancel: always back to the page the user entered from
-    CONNECT -- Cancel --> BACK{"Cancel: nothing saved<br/>entered from?"}
+    %% Cancel and saves return to where the user came from
+    CONNECT -- Cancel --> BACK{"Return to where<br/>the user came from"}
     NEXT -- Cancel --> BACK
     NEW -- Cancel --> BACK
     BACK -- Home --> RV
@@ -82,29 +92,74 @@ flowchart TD
     THREAD -. "leave · come back later" .-> OPEN
 ```
 
-## Onboarding research and decisions
+**Changed since the Step 2 specification:**
+- The first visit no longer has a verb line or a collapsed example below the form. It shows an example figure beside
+  the form instead, which becomes a live preview as you type (Step 4).
+- A short, skippable first-use tour was added (Step 5).
+- The returning view (Step 6) has a Continue card and an **All your maps** list instead of "other open threads".
+  Connecting a reading and completing the next step are separate actions on the card. The specification's combined
+  "I did this, add what I found" flow isn't linked from the interface.
+- Saving or completing a next step started from home returns home; started from a thread, it returns to the thread.
+
+## Step 3 — Onboarding research
 
 We studied how three comparable tools welcome new users: **The StoryGraph** (a reading tracker), **Heptabase** (a visual
 whiteboard for learning) and **Are.na** (collecting and connecting saved content). The research used public pages and
-documentation only, so screens behind sign-up were not observed. Full findings, evidence labels, and sources are in
-[onboarding-research.md](onboarding-research.md).
+documentation only, so screens behind sign-up were not observed. Full findings, evidence labels, sources and the
+original recommendations are in [onboarding-research.md](onboarding-research.md).
 
-**Adopted for the first visit:**
-- No gate: the home page opens directly on the start form, with no tour, survey, or setup step.
-- Only the title and the question are required. Author and link sit under "Add details (optional)".
-- One line of verbs teaches the model: *Ask a question → Connect readings → Save your next step.*
-- A collapsed, read-only **"See an example exploration"** below the form, kept separate from saved data.
-- The first save opens the user's own map, with a neutral primary action, **Connect another reading**. The connect form
-  explains all three relationships.
-- A relationship and a contribution note are required when connecting. Relationship labels appear on map connections,
-  and full notes appear in the detail panel and list view.
-- A two-item header, with no videos or separate help pages.
+| Recommendation | Why (evidence) | Research decision | Later revision |
+|---|---|---|---|
+| No gate before the start form | All three require an account before any value | Adopted | Still true: no account or setup step. A short first-use tour was added in Step 5. It's skippable and runs once. |
+| Only the title and question required | StoryGraph's minimal first action | Adopted | Still true. Author and link sit under "+ Author or link (optional)", and type defaults to Book. |
+| Teach the model in one line of verbs | Are.na's five-verb strip | Adopted | Replaced in the Step 4 redesign by the example figure and live preview. |
+| Read-only example, collapsed below the form | Heptabase's example boards | Adopted as "See an example exploration" | Replaced in Step 4 by an always-visible example beside the form. Step 5 added a second reading to show how an exploration continues. |
+| First save opens the user's own map | Heptabase starts from your own material | Adopted, with the neutral primary action **Connect another reading** | Still true ("Your first map"). |
+| Relationship and note required when connecting, shown as labels | Unlabeled arrows in Heptabase's docs; Are.na treats connections as meaningful | Adopted | Still true. Step 5 clarified the options and added an "I originally thought… After reading this…" prompt. |
+| A two-item header, no videos or help pages | Heptabase's seven sidebar areas and video-led learning | Adopted | Still true. |
+| A "Try another" question shuffle | Are.na's random-title shuffle | Deferred | Not built. The question starters remain. |
+| A placeholder "Your next reading" node | Are.na teaches connecting late | Deferred | Not built. The **Connect another reading** action is used instead. |
 
-**Deferred:**
-- A "Try another" button that cycles example questions. The existing question starters stay.
-- A placeholder "Your next reading" node on new maps. The **Connect another reading** action is used instead.
+## Step 4 — First visit
 
-## Local usability test (Step 5)
+The design is **Concept A, "Editorial Atlas"**: warm paper, ink and oxblood, serif questions, and a reading drawn as a
+book linked to its question. It was chosen over a second concept; both mockups are in
+[design-concepts/step4/](design-concepts/step4/).
+
+How the current first visit gives value right away:
+- **The form is the first thing on the page**, with no account and no setup: the reading, the question it raised, and
+  question starters ("Try: …"). Saved data "Stays in this browser · no account".
+- **Example figure:** beside the form, a read-only example shows *The Little Prince* raising "What makes a place feel
+  like home?". A second reading, *The Poetics of Space*, connects as **Challenges**, with its note. **Use this example**
+  copies the example into the form. The example is a constant in the code and is never saved.
+- **Live preview:** once you start typing, the figure becomes a preview of your own map ("Not saved") and updates as you
+  write.
+- **Immediate result:** **Begin the map** saves the thread and opens "Your first map", with **Connect another reading**
+  as the next action.
+- **Skippable tour:** on the first visit only, a two-step tour highlights the reading and question fields. Skip tour or
+  Escape ends it at any step (details in Step 5).
+
+## Step 5 — Core flow, usability test, and first-use tour
+
+The core flow (create, connect, edit, remove, next step, delete) was built as specified in [flows.md](flows.md).
+
+### First-use tour
+
+Each core page has a short tour chapter, shown automatically only the first time that page is visited:
+- **Home**, 2 steps: the reading and the question.
+- **First thread page**, 3 steps: the question, the connected reading, and **Connect another reading**.
+- **Connect page**, 2 steps: the relationship and the note.
+- **Next-step page**, 1 step.
+
+Tour buttons never save or change anything. **Skip tour** or Escape ends the current chapter and suppresses the rest.
+Finishing a chapter ends only that chapter. Progress is kept under its own key, `reading-map:tour`, so it survives
+refreshes. On phones the panel docks to the bottom, and the highlighted element scrolls fully above it.
+
+Verified with a scripted run in fresh browser profiles: **46/46 at 1440 × 900 and 46/46 at 390 × 844**. It covers every
+step's text and highlighted element, Back, focus, refresh, Skip from home, and Escape midway through a chapter. The
+tour was later made a true modal in Step 7.
+
+### Local usability test
 
 Another agent tested the running app locally (http://localhost:3102) on October 20, 2026, at 1440 × 900 and
 390 × 844. **This was a local test, not the deployed first-run check, which is still pending (see below).**
@@ -120,7 +175,7 @@ confirmation.
 | Finding | Change |
 |---|---|
 | The example showed one reading raising a question, but not how an exploration continues. | The read-only example now adds a second reading (*The Poetics of Space*) connected as **Challenges**, with its note: "I originally thought… After reading this…". A caption explains: "When you read something related, connect it to your question and note how it changes your thinking." The example is still a constant in the code and is never saved. |
-| Supports and Challenges felt ambiguous, because the user never states their current view. | The connect form explains that the choice describes how the reading affects what you currently think, and each option has a concrete example. The contribution field suggests "I originally thought… After reading this…". No new required step; stored relationship values are unchanged. |
+| Supports and Challenges felt ambiguous, because the user never states their current view. | The connect form explains that the choice describes how the reading affects what you currently think, and each option has a one-line description (for example, Challenges: "It makes you reconsider what you currently think."). The contribution field suggests "I originally thought… After reading this…". No new required step; stored relationship values are unchanged. |
 | On a phone, the first map pushed the question below the first screen. On desktop, a small map stacked vertically and ran past the bottom of the screen. | On phones the original reading is a compact card with a shorter connector and smaller action buttons, so the reading and the question are visible together. On wide screens, maps with 2–4 readings place readings beside the question instead of above and below it. |
 | The map hint said "Select the book…" even for articles. | The hint now says "Select a reading to see your note." |
 | Older threads have no visible entry point from home (only the latest is linked). | **Recorded for Step 6:** a Continue card and a list of all saved threads with each question, reading count, and next step. Not changed in this round; addressed in Step 6 (below). |
@@ -128,7 +183,7 @@ confirmation.
 Rechecked locally after the changes with a scripted run in a fresh browser profile: the core flow (create, validate,
 connect, cancel, edit, next step, remove, delete, refresh) still passes at both sizes, plus checks for the four fixes.
 
-## Returning experience (Step 6)
+## Step 6 — Returning experience
 
 **Reason to come back:** "I've read something related to an earlier question, or I want to continue the next step I
 saved."
@@ -178,9 +233,9 @@ core flow 52/52 on desktop and 51/51 on phone.
 (three test threads, continuing an older thread, change/validate/cancel/save, Mark done on the card and on the page,
 Cancel from Connect, refresh, and reopening in a new tab), with no problems found.
 
-Not covered: storage failure while returning, and a full accessibility audit.
+Not covered: storage failure while returning. Accessibility was audited separately in Step 7.
 
-## Accessibility (Step 7)
+## Step 7 — Accessibility
 
 Audited locally (http://localhost:3102, October 20, 2026) at 1440 × 900 and 390 × 844, against WCAG 2.2 AA.
 No features were added and the design is unchanged.
