@@ -1,0 +1,242 @@
+"use client";
+
+import { useEffect, useId, useRef, useState } from "react";
+import { connectPath } from "@/lib/navigation";
+import { readPreference, writePreference } from "@/lib/store";
+import { removeReading } from "@/lib/threads";
+import { SESSION_ONLY } from "@/lib/flash";
+import type { Thread } from "@/lib/types";
+import { Button } from "../ui/Button";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { MapLegend, RelationshipLabel } from "./RelationshipLabel";
+import { ReadingActions, ReadingMeta, ReadingNote } from "./ReadingInfo";
+import { ThreadMap } from "./ThreadMap";
+
+type View = "map" | "list";
+
+/**
+ * The thread's readings as a map (with a detail panel) or as a list. Both show the same content:
+ * relationship labels, full notes, and the same actions. `readOnly` hides all editing (the example).
+ */
+export function ThreadExplorer({
+  thread,
+  readOnly = false,
+  showBoth = false,
+  openReadingId,
+  onNotice,
+  level = 2,
+}: {
+  thread: Thread;
+  /** Heading level for "Readings"; reading titles use the next level down. */
+  level?: 2 | 3;
+  readOnly?: boolean;
+  /** Show the map and the list together instead of a Map/List toggle (used by the example). */
+  showBoth?: boolean;
+  /** Reading to select and open, for example right after it was saved. */
+  openReadingId?: string | null;
+  onNotice?: (message: string, tone: "success" | "warning") => void;
+}) {
+  const [view, setView] = useState<View>(() => (readPreference("view") === "list" ? "list" : "map"));
+  const [selectedId, setSelectedId] = useState<string | null>(openReadingId ?? null);
+  const [followedOpenId, setFollowedOpenId] = useState(openReadingId);
+  const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
+  const nodes = useRef(new Map<string, HTMLButtonElement>());
+  const panelHeadingRef = useRef<HTMLHeadingElement>(null);
+  const regionHeadingRef = useRef<HTMLHeadingElement>(null);
+  const focusPanelOnSelect = useRef(false);
+  const headingId = useId();
+  const panelId = useId();
+
+  // A newly saved reading opens in the detail panel (adjusting state during render, not in an effect).
+  if (openReadingId !== followedOpenId) {
+    setFollowedOpenId(openReadingId);
+    if (openReadingId) setSelectedId(openReadingId);
+  }
+
+  const selected = thread.readings.find((reading) => reading.id === selectedId) ?? null;
+
+  useEffect(() => {
+    if (selected && focusPanelOnSelect.current) {
+      focusPanelOnSelect.current = false;
+      panelHeadingRef.current?.focus();
+    }
+  }, [selected]);
+
+  function chooseView(next: View) {
+    setView(next);
+    writePreference("view", next);
+  }
+
+  function select(readingId: string) {
+    focusPanelOnSelect.current = true;
+    setSelectedId(readingId);
+  }
+
+  function closePanel() {
+    const id = selectedId;
+    setSelectedId(null);
+    if (id) nodes.current.get(id)?.focus();
+  }
+
+  function confirmRemoval() {
+    const reading = thread.readings.find((r) => r.id === pendingRemoval);
+    setPendingRemoval(null);
+    if (!reading) return;
+    const { persisted } = removeReading(thread.id, reading.id);
+    if (selectedId === reading.id) setSelectedId(null);
+    onNotice?.(
+      persisted ? `Removed “${reading.title}”.` : `Removed “${reading.title}”. ${SESSION_ONLY}`,
+      persisted ? "success" : "warning",
+    );
+    regionHeadingRef.current?.focus();
+  }
+
+  const Heading = level === 2 ? "h2" : "h3";
+  const SubHeading = level === 2 ? "h3" : "h4";
+
+  const editHref = (readingId: string) => connectPath(thread.id, { readingId, returnTo: "thread" });
+  const pendingReading = thread.readings.find((r) => r.id === pendingRemoval);
+
+  const mapView = (
+    <div
+      className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && selectedId) {
+          event.stopPropagation();
+          closePanel();
+        }
+      }}
+    >
+      <div>
+        <div role="group" aria-label={`Map: readings connected to “${thread.question}”`}>
+          <ThreadMap
+            thread={thread}
+            selectedId={selectedId}
+            highlightId={openReadingId}
+            onSelect={select}
+            registerNode={(id, element) => {
+              if (element) nodes.current.set(id, element);
+              else nodes.current.delete(id);
+            }}
+          />
+        </div>
+        <div className="mt-4">
+          <MapLegend />
+        </div>
+      </div>
+      <section
+        id={panelId}
+        aria-label={selected ? undefined : "Reading details"}
+        aria-labelledby={selected ? `${panelId}-title` : undefined}
+        className="self-start rounded-xl border border-line bg-paper-raised p-5"
+      >
+        {selected ? (
+          <>
+            <RelationshipLabel relationship={selected.relationship} />
+            <SubHeading id={`${panelId}-title`} ref={panelHeadingRef} tabIndex={-1} className="mt-2 text-xl font-semibold">
+              {selected.title}
+            </SubHeading>
+            <ReadingMeta reading={selected} />
+            <ReadingNote reading={selected} />
+            {readOnly ? (
+              <div className="mt-4">
+                <Button variant="secondary" onClick={closePanel}>
+                  Close
+                </Button>
+              </div>
+            ) : (
+              <ReadingActions
+                reading={selected}
+                editHref={editHref(selected.id)}
+                onRemove={() => setPendingRemoval(selected.id)}
+                extra={
+                  <Button variant="quiet" onClick={closePanel}>
+                    Close
+                  </Button>
+                }
+              />
+            )}
+          </>
+        ) : (
+          <p className="text-ink-muted">Select a reading on the map to see its full note{readOnly ? "" : " and actions"}.</p>
+        )}
+      </section>
+    </div>
+  );
+
+  const listView = (
+    <ol className="space-y-4">
+      {thread.readings.map((reading) => (
+        <li
+          key={reading.id}
+          className={`rounded-xl border bg-paper-raised p-5 ${
+            openReadingId === reading.id ? "border-accent ring-2 ring-accent fade-in" : "border-line"
+          }`}
+        >
+          <RelationshipLabel relationship={reading.relationship} />
+          <SubHeading className="mt-2 text-xl font-semibold">{reading.title}</SubHeading>
+          <ReadingMeta reading={reading} />
+          <ReadingNote reading={reading} />
+          {readOnly ? null : (
+            <ReadingActions
+              reading={reading}
+              editHref={editHref(reading.id)}
+              onRemove={() => setPendingRemoval(reading.id)}
+            />
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+
+  return (
+    <section aria-labelledby={headingId}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Heading id={headingId} ref={regionHeadingRef} tabIndex={-1} className="text-2xl font-semibold">
+          Readings <span className="font-sans text-base font-normal text-ink-muted">({thread.readings.length})</span>
+        </Heading>
+        {showBoth ? null : (
+          <div role="group" aria-label="View" className="inline-flex rounded-lg border border-line-strong bg-paper-raised p-1">
+            {(["map", "list"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={view === option}
+                onClick={() => chooseView(option)}
+                className={`min-h-9 rounded-md px-4 font-semibold ${
+                  view === option ? "bg-accent text-white" : "text-ink hover:bg-paper-sunk"
+                }`}
+              >
+                {option === "map" ? "Map" : "List"}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showBoth ? (
+        <>
+          {mapView}
+          <SubHeading className="mb-3 mt-8 text-xl font-semibold">As a list</SubHeading>
+          {listView}
+        </>
+      ) : view === "map" ? (
+        mapView
+      ) : (
+        listView
+      )}
+
+      {readOnly ? null : (
+        <ConfirmDialog
+          open={pendingReading !== undefined}
+          title="Remove this reading?"
+          confirmLabel="Remove reading"
+          onConfirm={confirmRemoval}
+          onCancel={() => setPendingRemoval(null)}
+        >
+          Remove “{pendingReading?.title}” from this thread? Its note will be deleted.
+        </ConfirmDialog>
+      )}
+    </section>
+  );
+}

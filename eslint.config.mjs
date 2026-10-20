@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Later-stage features parked until their step (see pending/README.md).
+    "pending/**",
   ]),
 ]);
 
