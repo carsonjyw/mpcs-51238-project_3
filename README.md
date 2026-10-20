@@ -14,6 +14,7 @@ Then open http://localhost:3000.
 
 ## Contents
 
+- [Step 1 — Choosing the tool](#step-1--choosing-the-tool)
 - [Step 2 — Flows](#step-2--flows)
 - [Step 3 — Onboarding research](#step-3--onboarding-research)
 - [Step 4 — First visit](#step-4--first-visit)
@@ -21,6 +22,32 @@ Then open http://localhost:3000.
 - [Step 6 — Returning experience](#step-6--returning-experience)
 - [Step 7 — Accessibility](#step-7--accessibility)
 - [First-run check](#first-run-check)
+
+## Step 1 — Choosing the tool
+
+**How the idea was chosen.** Carson brought three ideas to the first planning discussion: **Time Exchange** (making
+weekly schedule trade-offs visible), **Skill Tree Studio** (turning a learning goal into a path), and **Reading
+Exploration Map**. Claude compared them on weekly usefulness, interaction depth, first-visit value, reasons to return,
+and difficulty, and recommended Time Exchange. It noted that Reading Map had the weakest first visit and return trigger,
+and risked becoming a tangle as the map grows. **Carson chose Reading Exploration Map**, and the
+design was then worked out step by step through discussion and revision. How the current version handles those concerns:
+- **First visit:** an example figure and live preview (Step 4).
+- **Growing maps:** a List view agreed in Step 2, and compact map layouts added in Step 5.
+- **Returning:** a saved next step (Step 2) and a Continue card with a list of every map (Step 6).
+
+**Who it's for:** people who read books and articles and want to follow the questions they raise. Users follow a question across books and articles, connect readings that add to or challenge their thinking, and save
+a next step.
+
+**The problem:** the original idea was "a tool that connects things people read with the questions and ideas they want to
+explore next", where, on returning, people "can see unfinished threads and choose where to continue." Without it,
+readings and the questions they raise stay separate, and unfinished threads are easy to lose.
+
+**Core activity:** start from a reading and the question it raised, connect later readings to that question, say how
+each one relates (Supports, Challenges, or Adds a new perspective) and what it contributes, and save one next step. The
+full sentence is under Step 2.
+
+**Why someone returns:** "I've read something related to an earlier question, or I want to continue the next step I
+saved." (Step 6)
 
 ## Step 2 — Flows
 
