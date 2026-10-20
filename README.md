@@ -4,6 +4,8 @@ A tool that connects what you read with the questions and ideas you want to expl
 Design, Build, Ship — Assignment 3: Patterns & Flows. Data is saved only in your browser (localStorage), with no
 database, accounts, or external APIs. Nothing is stored on a server.
 
+mpcs-51238-project-3.vercel.app
+
 ## Run locally
 
 ```bash
