@@ -31,16 +31,19 @@ When they return, they can see unfinished threads and choose where to continue.
 - Core functionality must work without AI-generated content.
 - Keep the implementation focused on the agreed MVP. Discuss significant scope changes with the user before implementing them.
 
-## Design and accessibility
+## Design requirements
 
-- Give first-time users something useful immediately; avoid dead-end empty screens.
-- Use one-column forms with real labels for every field.
-- Put actionable validation messages next to the relevant fields and preserve entered values when validation fails.
-- Use shared components consistently for buttons, fields, navigation, and feedback.
-- Provide clear navigation between routes, including a clear way back.
-- Support keyboard operation and visible focus states. Check text contrast.
-- Design the returning-user experience around saved exploration threads and a clear next step.
-- If a visual map is implemented, provide an accessible list view of the same information.
+- **Complete flows:** The first visit, core task, and returning experience must work from start to finish, following the agreed flows in `flows.md`.
+- **Useful onboarding:** New users must understand the tool and accomplish something useful immediately. Avoid dead-end empty screens. Keep example content clearly labeled and separate from saved user data.
+- **Forms:** Use one-column layouts with real, programmatically associated labels for every field. Place actionable errors next to the relevant fields, preserve entered values after validation failures, and focus the first invalid field.
+- **Returning users:** Persist application data with localStorage and provide a clear way to resume an exploration thread. Only confirm persistent saving after storage succeeds; explain storage failures clearly.
+- **Shared components:** Reuse consistent components for buttons, fields, validation, navigation, dialogs, and feedback.
+- **Navigation:** Make the current location and return path clear. Follow the agreed Cancel behavior, support browser Back, and provide shared navigation across routes.
+- **Accessibility:** Support keyboard operation throughout, including map controls and dialogs. Provide visible focus indicators, accessible names, and appropriate focus management. Offer an accessible list alternative to the map. Check text contrast and respect reduced-motion preferences.
+- **Visual style:** Follow the agreed visual direction consistently. Prioritize readability, clear hierarchy, and legible map labels. Never communicate meaning through color alone.
+- **Simplicity:** Remove unnecessary steps, fields, and interactions. Keep optional details out of the primary path and defer features outside the agreed MVP.
+
+Verify these requirements against the running app. Report actual checks and remaining issues; do not claim verification based only on the design specification.
 
 ## Process
 
