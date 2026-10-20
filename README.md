@@ -45,9 +45,10 @@ flowchart TD
 
     %% Thread hub with map
     THREAD["<b>Thread · /threads/[id]</b><br/>Map view: question at center,<br/>readings arranged around it,<br/>lines labeled Supports / Challenges /<br/>Adds a new perspective<br/>List view: same content, accessible alternative"]
-    THREAD -- Select a reading --> DETAIL["Detail panel<br/>contribution note · Edit · Remove"]
+    THREAD -- "New thread (header)" --> NEW
+    THREAD -- Select a reading --> DETAIL["Detail panel<br/>note · Edit · Remove<br/>original reading: Raised this question · Edit only"]
     DETAIL -- Edit --> CONNECT
-    DETAIL -- Remove --> RMQ{Confirm remove?}
+    DETAIL -- "Remove (connected readings only)" --> RMQ{Confirm remove?}
     RMQ -- Yes --> THREAD
     RMQ -- No --> DETAIL
     THREAD -- Edit question inline --> THREAD
@@ -56,13 +57,12 @@ flowchart TD
     DELQ -- No --> THREAD
 
     %% Main task: connect
-    THREAD -- Connect a reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship · what it contributes"]
+    THREAD -- Connect a reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship · what it contributes<br/>editing the original reading: details only,<br/>relationship stays Raised this question"]
     CONNECT -- Submit --> V2{Valid?}
     V2 -- No --> E2["Errors next to each field<br/>typed text kept<br/>next step unchanged"]
     E2 --> CONNECT
     V2 -- Yes --> SAVED["Reading saved to thread<br/>if started from 'I did this':<br/>step marked done or replaced in the same save"]
     SAVED --> THREAD
-    CONNECT -- Cancel --> THREAD
 
     %% Next step
     THREAD -- "Save / change next step" --> NEXT["<b>/threads/[id]/next-step</b><br/>one current next step"]
@@ -70,7 +70,13 @@ flowchart TD
     V3 -- No --> E3["Error next to field<br/>typed text kept"]
     E3 --> NEXT
     V3 -- Yes --> THREAD
-    NEXT -- Cancel --> THREAD
+
+    %% Cancel: always back to the page the user entered from
+    CONNECT -- Cancel --> BACK{"Cancel: nothing saved<br/>entered from?"}
+    NEXT -- Cancel --> BACK
+    NEW -- Cancel --> BACK
+    BACK -- Home --> RV
+    BACK -- Thread --> THREAD
 
     %% Coming back later
     THREAD -. "leave · come back later" .-> OPEN

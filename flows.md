@@ -46,9 +46,10 @@ flowchart TD
 
     %% Thread hub with map
     THREAD["<b>Thread · /threads/[id]</b><br/>Map view: question at center,<br/>readings arranged around it,<br/>lines labeled Supports / Challenges /<br/>Adds a new perspective<br/>List view: same content, accessible alternative"]
-    THREAD -- Select a reading --> DETAIL["Detail panel<br/>contribution note · Edit · Remove"]
+    THREAD -- "New thread (header)" --> NEW
+    THREAD -- Select a reading --> DETAIL["Detail panel<br/>note · Edit · Remove<br/>original reading: Raised this question · Edit only"]
     DETAIL -- Edit --> CONNECT
-    DETAIL -- Remove --> RMQ{Confirm remove?}
+    DETAIL -- "Remove (connected readings only)" --> RMQ{Confirm remove?}
     RMQ -- Yes --> THREAD
     RMQ -- No --> DETAIL
     THREAD -- Edit question inline --> THREAD
@@ -57,13 +58,12 @@ flowchart TD
     DELQ -- No --> THREAD
 
     %% Main task: connect
-    THREAD -- Connect a reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship · what it contributes"]
+    THREAD -- Connect a reading --> CONNECT["<b>/threads/[id]/connect</b><br/>title · type · author/link optional<br/>relationship · what it contributes<br/>editing the original reading: details only,<br/>relationship stays Raised this question"]
     CONNECT -- Submit --> V2{Valid?}
     V2 -- No --> E2["Errors next to each field<br/>typed text kept<br/>next step unchanged"]
     E2 --> CONNECT
     V2 -- Yes --> SAVED["Reading saved to thread<br/>if started from 'I did this':<br/>step marked done or replaced in the same save"]
     SAVED --> THREAD
-    CONNECT -- Cancel --> THREAD
 
     %% Next step
     THREAD -- "Save / change next step" --> NEXT["<b>/threads/[id]/next-step</b><br/>one current next step"]
@@ -71,7 +71,13 @@ flowchart TD
     V3 -- No --> E3["Error next to field<br/>typed text kept"]
     E3 --> NEXT
     V3 -- Yes --> THREAD
-    NEXT -- Cancel --> THREAD
+
+    %% Cancel: always back to the page the user entered from
+    CONNECT -- Cancel --> BACK{"Cancel: nothing saved<br/>entered from?"}
+    NEXT -- Cancel --> BACK
+    NEW -- Cancel --> BACK
+    BACK -- Home --> RV
+    BACK -- Thread --> THREAD
 
     %% Coming back later
     THREAD -. "leave · come back later" .-> OPEN
@@ -110,7 +116,13 @@ Fields, one column:
   that opens it for editing.
 - **Edit mode** — opened from the detail panel (`/threads/[id]/connect?reading=<id>`): same form, prefilled, button reads
   **Save changes**.
-- **Coming from "I did this, add what I found"** (`/threads/[id]/connect?from=next-step`): the current next step is shown
+- **Editing the original reading** (the one that raised the question): same route and form, with these differences:
+  - Only the reading's details are edited: Title (required), Type, Author, Link.
+  - Its relationship is preserved as **Raised this question**. It is shown as fixed text, not as a choice, and the three
+    connection relationships are not offered or required.
+  - The contribution note is not required. An optional **Notes** field is offered instead.
+  - There is no Remove action for this reading (see §6).
+- **Coming from "I did this, add what I found"** (`/threads/[id]/connect?mode=next-step`): the current next step is shown
   at the top, and the form adds one choice:
   - ( ) Mark my next step done
   - ( ) Replace it with: [new next step] — required if chosen: "Write your new next step, or choose 'Mark it done'."
@@ -119,7 +131,7 @@ Fields, one column:
   is saved and the next step stays exactly as it was.
 - After saving → thread page, the new or edited reading is highlighted and its detail panel is open. A short
   confirmation message is announced ("Connected *Locke on personal identity*").
-- Cancel → back to the thread, nothing changed.
+- Cancel → back to the page the user entered from (home or the thread), nothing saved. See §8.
 
 ## 3. Next step (`/threads/[id]/next-step`)
 
@@ -128,7 +140,8 @@ Fields, one column:
   - Empty → "Write one thing to do next, like 'Read chapter 3' or 'Find an article on…'."
   - Too long → "Keep your next step under 200 characters."
 - If a step already exists, the form is prefilled and also offers **Mark done** (clears the step without replacing it).
-- Saving → thread page with the step pinned near the top. Cancel → back where they came from (thread or home).
+- Saving → thread page with the step pinned near the top. Cancel → back to the page the user entered from (home or the
+  thread), nothing saved. See §8.
 - History of completed steps is **deferred**.
 
 ## 4. The per-thread map
@@ -142,8 +155,9 @@ Shown on `/threads/[id]` (and read-only in the home-page example).
 - **Edges:** each line is labeled with its relationship in text. Relationship is also shown by line style (Supports =
   solid, Challenges = dashed, Adds a new perspective = dotted) so it never relies on color alone.
 - **Selecting a reading** (click, or Tab to it and press Enter/Space) opens a detail panel next to or below the map:
-  title, type, author/link, relationship, contribution note, **Edit** and **Remove**. Escape closes the panel and returns
-  focus to the node.
+  title, type, author/link, relationship, contribution note, **Edit** and **Remove**. For the original reading the panel
+  shows **Raised this question** and its optional notes, with **Edit** only (no Remove). Escape closes the panel and
+  returns focus to the node.
 - **Map / List toggle:** the list view shows the same content as a timeline (question, then each reading with its
   relationship badge, note, and the same actions). It is the accessible alternative and works with screen readers and
   keyboard alone. The last choice is remembered on this device.
@@ -159,12 +173,13 @@ stateDiagram-v2
     ReadingSelected --> MapView: Escape / close
     ReadingSelected --> ReadingSelected: select another reading
     ReadingSelected --> EditReading: Edit
-    ReadingSelected --> ConfirmRemove: Remove
+    ReadingSelected --> ConfirmRemove: Remove (connected readings only)
     ConfirmRemove --> MapView: Remove confirmed
     ConfirmRemove --> ReadingSelected: Cancel
     EditReading --> ReadingSelected: saved
+    EditReading --> ReadingSelected: Cancel
     ListView --> EditReading: Edit
-    ListView --> ConfirmRemove: Remove
+    ListView --> ConfirmRemove: Remove (connected readings only)
 ```
 
 ## 5. Returning (`/`, saved data exists)
@@ -186,7 +201,7 @@ flowchart LR
     C -- invalid --> C
     C -- "valid save" --> S["Save reading AND<br/>mark step done or replace it<br/>(one save)"]
     S --> T["Thread page<br/>new reading highlighted on map"]
-    C -- Cancel --> R2["Back to returning view<br/>next step unchanged"]
+    C -- Cancel --> R2["Back to returning view,<br/>the page they entered from<br/>nothing saved, next step unchanged"]
 ```
 
 ## 6. Editing and deletion
@@ -194,10 +209,10 @@ flowchart LR
 | What | How | Confirm? |
 |---|---|---|
 | Question | Inline edit on the thread page (same field component and validation) | No; Cancel restores it |
-| First reading (raised the question) | Edit from its detail panel | — |
-| Connected reading | Edit via connect form in edit mode | — |
+| Original reading (raised the question) | Detail panel or list → **Edit**: details only (title, type, author, link, optional notes). Relationship stays **Raised this question**; no relationship choice or contribution note required | — |
+| Connected reading | Detail panel or list → **Edit**: connect form in edit mode | — |
 | Remove a connected reading | Detail panel or list → **Remove** | Yes: "Remove *Clive Wearing article* from this thread? Its note will be deleted." |
-| First reading | Cannot be removed (edit it, or delete the thread) | — |
+| Original reading | **Remove is not offered** (it is the thread's starting point; edit it, or delete the whole thread) | — |
 | Next step | `/threads/[id]/next-step` → change or **Mark done** | No |
 | Delete thread | Thread page → **Delete thread** | Yes: "Delete this thread, its 3 readings and notes? This can't be undone." → home |
 
@@ -224,12 +239,31 @@ Confirmations use an accessible dialog: focus moves into it, Escape cancels, and
 | `/` | First visit (start form + expandable example) or returning view |
 | `/threads/new` | Start another thread (same start form component) |
 | `/threads/[id]` | Thread hub: map / list toggle, detail panel, next step, edit question, delete thread |
-| `/threads/[id]/connect` | Connect a reading; also edit mode (`?reading=`) and next-step mode (`?from=next-step`) |
+| `/threads/[id]/connect` | Connect a reading; also edit mode (`?reading=`) and next-step mode (`?mode=next-step`) |
 | `/threads/[id]/next-step` | Save, change, or mark done the one current next step |
 
 - **Shared header** on every page: **Reading Map** (home) and **+ New thread**, with `aria-current` on the current page.
 - **Breadcrumbs** on thread subpages: *Home › How does memory shape identity? › Connect a reading*.
-- Every form has **Cancel** returning to where the user came from; after saving, the user always lands on the thread.
+
+**Cancel and return paths (same rule on every form):**
+
+- **Cancel always returns to the page the user entered the form from**, home or the thread, and saves nothing.
+- Links into a form carry where they came from as `returnTo=home` or `returnTo=thread`. Only those two values are
+  accepted; anything else is ignored.
+- If `returnTo` is missing (for example, a pasted link), Cancel goes to the thread for thread subpages, and home for
+  `/threads/new`.
+
+| Form | Entered from | Cancel goes to |
+|---|---|---|
+| `/threads/[id]/connect` | Thread page (**Connect a reading**, or **Edit** on a reading) | Thread |
+| `/threads/[id]/connect?mode=next-step` | Home Continue card (**I did this, add what I found**) | Home |
+| `/threads/[id]/next-step` | Thread page | Thread |
+| `/threads/[id]/next-step` | Home Continue card (**Change next step** / **Save a next step**) | Home |
+| `/threads/new` | Home (**+ New thread**) | Home |
+| `/threads/new` | Header **+ New thread** while viewing a thread | That thread |
+| Inline question edit | Thread page | Stays on the thread, original question restored |
+
+- After a successful **save**, the user always lands on the thread.
 - Browser Back works throughout; a skip-to-content link is the first focusable element.
 
 **Shared components:** Header, Breadcrumbs, Button, TextField, TextArea, RadioGroup (relationship / type), FieldError,
@@ -245,7 +279,8 @@ One versioned key, e.g. `reading-map:v1`:
     id, question, createdAt, updatedAt,
     readings: [{ id, title, type: "book" | "article", author?, url?,
                  relationship: "raised" | "supports" | "challenges" | "perspective",
-                 note?, addedAt }],          // first reading has relationship "raised"
+                 note?, addedAt }],          // original reading: relationship always "raised",
+                                             // note optional; connected readings: note required
     nextStep: { text, setAt } | null
   }]
 }
