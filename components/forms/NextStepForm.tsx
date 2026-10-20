@@ -3,25 +3,36 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { saveFlash, setFlash } from "@/lib/flash";
-import { threadPath } from "@/lib/navigation";
+import { threadPath, type ReturnTo } from "@/lib/navigation";
 import { markNextStepDone, setNextStep } from "@/lib/threads";
 import type { Thread } from "@/lib/types";
 import { LIMITS, validateNextStep } from "@/lib/validation";
 import { Button, ButtonLink } from "../ui/Button";
 import { TextField } from "../ui/Field";
 
-/** One current next step per thread: save, change, or mark it done. */
-export function NextStepForm({ thread, cancelHref }: { thread: Thread; cancelHref: string }) {
+/**
+ * One current next step per thread: save, change, or mark it done. The next step changes only when
+ * Save or Mark done succeeds; then the person returns where they came from (home or the thread).
+ */
+export function NextStepForm({
+  thread,
+  returnTo,
+  cancelHref,
+}: {
+  thread: Thread;
+  returnTo: ReturnTo;
+  cancelHref: string;
+}) {
   const router = useRouter();
   const [text, setText] = useState(thread.nextStep?.text ?? "");
   const [error, setError] = useState<string | undefined>();
   const fieldRef = useRef<HTMLInputElement>(null);
 
   function finish(flashed: ReturnType<typeof saveFlash>) {
-    setFlash(thread.id, flashed);
+    setFlash(returnTo === "home" ? "home" : thread.id, flashed);
     setText(thread.nextStep?.text ?? "");
     setError(undefined);
-    router.push(threadPath(thread.id));
+    router.push(returnTo === "home" ? "/" : threadPath(thread.id));
   }
 
   function submit(event: React.FormEvent) {

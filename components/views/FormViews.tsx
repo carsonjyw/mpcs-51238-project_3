@@ -141,7 +141,7 @@ export function NextStepView() {
         </>
       }
     >
-      <NextStepForm key={`${thread.id}:${thread.updatedAt}`} thread={thread} cancelHref={returnHref(returnTo, thread.id)} />
+      <NextStepForm key={`${thread.id}:${thread.updatedAt}`} thread={thread} returnTo={returnTo} cancelHref={returnHref(returnTo, thread.id)} />
     </FormPage>
   );
 }
