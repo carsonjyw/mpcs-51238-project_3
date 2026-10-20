@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
 import { Suspense } from "react";
 import { FlashRouteWatcher } from "@/components/FlashRouteWatcher";
+import { RouteFocus } from "@/components/RouteFocus";
 import { SiteHeader, SiteHeaderShell } from "@/components/SiteHeader";
 import { StorageBanner } from "@/components/StorageBanner";
 import "./globals.css";
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={<SiteHeaderShell />}>
           <SiteHeader />
           <FlashRouteWatcher />
+          <RouteFocus />
         </Suspense>
         <StorageBanner />
         <main id="main" tabIndex={-1} className="flex-1 px-[18px] pb-16 pt-7 lg:px-14 lg:pt-11">

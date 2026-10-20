@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { CHAPTERS, markChapterSeen, shouldShowChapter, skipTour, type Chapter } from "@/lib/tour";
 
 /** Phones and narrow windows dock the panel to the bottom of the screen. */
@@ -107,16 +108,35 @@ export function Tour({
     };
   }, [open, step]);
 
-  // Move focus into the panel once the page has finished its own focus handling.
+  // While open, everything outside the tour layer is inert: it stays visible (dimmed, with the spotlight) but
+  // can't be focused, clicked, or reached by screen readers. Only what the tour made inert is restored on close.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const active = document.activeElement as HTMLElement | null;
+    if (active && active !== document.body) returnFocus.current = active;
+    const made: HTMLElement[] = [];
+    const makeInert = (element: Element) => {
+      if (!(element instanceof HTMLElement) || element.hasAttribute("data-tour-layer") || element.inert) return;
+      if (["SCRIPT", "STYLE", "TEMPLATE", "NEXT-ROUTE-ANNOUNCER"].includes(element.tagName)) return;
+      element.inert = true;
+      made.push(element);
+    };
+    [...document.body.children].forEach(makeInert);
+    // Content added to the page while the chapter is open is made inert too.
+    const observer = new MutationObserver((records) =>
+      records.forEach((record) => record.addedNodes.forEach((node) => node instanceof Element && makeInert(node))),
+    );
+    observer.observe(document.body, { childList: true });
+    return () => {
+      observer.disconnect();
+      for (const element of made) element.inert = false;
+    };
+  }, [open]);
+
+  // Move focus into the panel once the page has finished rendering.
   useEffect(() => {
     if (!open) return;
-    const frame = requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const active = document.activeElement as HTMLElement | null;
-        if (active && active !== document.body && !panelRef.current?.contains(active)) returnFocus.current = active;
-        nextRef.current?.focus();
-      }),
-    );
+    const frame = requestAnimationFrame(() => requestAnimationFrame(() => nextRef.current?.focus()));
     return () => cancelAnimationFrame(frame);
   }, [open]);
 
@@ -125,7 +145,12 @@ export function Tour({
       if (skipped) skipTour();
       setOpen(false);
       const previous = returnFocus.current;
-      const target = previous && previous.isConnected ? previous : (fallbackFocus?.() ?? null);
+      // A page heading focused only as a landing spot after navigation gives way to the chapter's own target.
+      const landing =
+        previous && previous.tabIndex === -1 && (/^H[1-6]$/.test(previous.tagName) || previous.tagName === "MAIN");
+      const fallback = fallbackFocus?.() ?? null;
+      const usable = previous && previous.isConnected && previous.getClientRects().length > 0;
+      const target = usable && !(landing && fallback) ? previous : fallback;
       requestAnimationFrame(() => target?.focus());
     },
     [fallbackFocus],
@@ -196,8 +221,16 @@ export function Tour({
   const secondary =
     "inline-flex min-h-10 items-center rounded-full border border-ink px-5 text-[0.875rem] font-semibold hover:bg-ink hover:text-paper";
 
-  return (
-    <div className="fixed inset-0 z-50">
+  // Rendered at the end of <body>, outside the page, so the rest of the page can be made inert.
+  return createPortal(
+    <div
+      data-tour-layer=""
+      className="fixed inset-0 z-50"
+      // Clicking the dimmed page does nothing and keeps focus in the panel.
+      onMouseDown={(event) => {
+        if (!panelRef.current?.contains(event.target as Node)) event.preventDefault();
+      }}
+    >
       {/* The spotlight: everything outside the highlighted area is dimmed and can't be clicked. */}
       {spot ? (
         <div
@@ -251,6 +284,7 @@ export function Tour({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

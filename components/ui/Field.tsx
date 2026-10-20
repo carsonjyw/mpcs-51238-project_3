@@ -168,7 +168,7 @@ export function TextArea({
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(hint ? hintId : undefined, error ? errorId : undefined)}
         aria-required={required || undefined}
-        className={`line-input mt-2 resize-y placeholder:text-ink-muted/70 ${large ? "large" : ""}`}
+        className={`line-input mt-2 resize-y placeholder:text-ink-muted ${large ? "large" : ""}`}
       />
       {counterMax ? <Counter length={value.trim().length} max={counterMax} /> : null}
       <FieldError id={errorId}>{error}</FieldError>

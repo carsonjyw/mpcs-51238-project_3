@@ -68,7 +68,7 @@ function FirstVisit() {
           {flash?.message}
         </Notice>
         <p className="kicker">No. 01 — Begin a map</p>
-        <h1 className="mb-3.5 mt-3.5 text-[2.375rem] leading-[1.02] tracking-[-0.015em] lg:text-[3.375rem]">
+        <h1 tabIndex={-1} className="mb-3.5 mt-3.5 text-[2.375rem] leading-[1.02] tracking-[-0.015em] lg:text-[3.375rem]">
           What are you reading, and what did it make you <em className="text-accent">wonder?</em>
         </h1>
         <p className="mb-7 max-w-[30em] text-ink-muted">

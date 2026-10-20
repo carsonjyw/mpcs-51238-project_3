@@ -40,7 +40,7 @@ function FormPage({
         />
       ) : null}
       <Breadcrumbs items={crumbs} />
-      <h1 className="mt-5 text-[2.125rem] leading-[1.05] lg:text-[2.75rem]">{title}</h1>
+      <h1 tabIndex={-1} className="mt-5 text-[2.125rem] leading-[1.05] lg:text-[2.75rem]">{title}</h1>
       {intro ? <div className="mt-2 leading-relaxed text-ink-muted">{intro}</div> : null}
       <div className="mt-7">{children}</div>
     </div>

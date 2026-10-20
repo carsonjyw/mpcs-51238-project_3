@@ -29,7 +29,7 @@ export function NotFoundMessage({
 }) {
   return (
     <div className="max-w-2xl border-t border-ink pt-6">
-      <h1 className="text-[2.25rem]">{title}</h1>
+      <h1 tabIndex={-1} className="text-[2.25rem]">{title}</h1>
       <p className="mt-3 text-ink-muted">{body}</p>
       <ButtonLink href={actionHref} className="mt-6">
         {actionLabel}

@@ -44,7 +44,11 @@ function sideBySide(readings: Reading[], width: number) {
       x,
       y: cy + (index - (items.length - 1) / 2) * (SIZES.nodeH + rowGap),
     }));
-  return { placed: [...column(left, cx - offset), ...column(right, cx + offset)], height, cx, cy };
+  // Kept in the order the readings were added, so Tab and screen readers follow that order (row by row).
+  const placed = [...column(left, cx - offset), ...column(right, cx + offset)].sort(
+    (a, b) => readings.indexOf(a.reading) - readings.indexOf(b.reading),
+  );
+  return { placed, height, cx, cy };
 }
 
 /**

@@ -180,6 +180,110 @@ Cancel from Connect, refresh, and reopening in a new tab), with no problems foun
 
 Not covered: storage failure while returning, and a full accessibility audit.
 
+## Accessibility (Step 7)
+
+Audited locally (http://localhost:3102, October 20, 2026) at 1440 × 900 and 390 × 844, against WCAG 2.2 AA.
+No features were added and the design is unchanged.
+
+### Findings and fixes
+
+| Finding | How it was found | Fix |
+|---|---|---|
+| **Focus was lost after moving to another page.** Following a link whose page then disappears (Open map, Connect another reading, Change next step, an older thread from the list) left focus on the page body, so the next Tab went to the end of the document instead of into the new page. 5 of the 9 navigations tested were affected. | Scripted keyboard run (Enter on each link, then Tab) | After a navigation, if focus would be lost, it moves to the new page's main heading. Focus that a page sets on purpose is left alone: the heading after a save, the tour panel, or a header link that stays on screen. When a tour chapter on a form page closes, focus still goes to the first field. |
+| **Map Tab order didn't follow the readings.** On wide screens, maps with 2–4 readings were tabbed column by column (1st, 3rd, 2nd, 4th reading). | Scripted Tab order on a 4-reading map | The nodes now follow the order the readings were added (row by row). Positions on screen are unchanged. |
+| **Placeholder text contrast was 3.22:1** (the connect form's "I originally thought… After reading this…", in muted ink at 70% opacity). | Contrast calculation | Uses the full muted ink: **6.30:1**. |
+| **The page behind the tour was still reachable.** The tour panel was marked `aria-modal` and kept Tab inside, but the page behind it wasn't inert: a screen reader that ignores `aria-modal` could browse it, and clicking the dimmed page blurred the panel's button, leaving focus on the page body. | Code review; then Chrome's accessibility tree and real clicks in a scripted run | The tour now renders at the end of the page. While a chapter is open, everything else is `inert`: still visible (dimmed, with the spotlight) but not focusable, clickable or exposed to assistive technology. Content added to the page while it's open is made inert too. Clicking the dimmed page keeps focus in the panel. On close, only what the tour made inert is restored, and focus returns as before. |
+
+### Checked and passing (no change needed)
+
+- **Keyboard:**
+  - Every Tab stop shows a visible 3px oxblood focus ring, and the order follows the page on the first visit, returning home, map, list, connect form, next-step form and dialogs.
+  - "Skip to content" is the first Tab stop.
+  - Enter and Space activate buttons. Enter or Space on a map reading opens its details with focus on the title, and Escape closes them and returns focus to the reading.
+  - Arrow keys move between relationship options.
+  - The Map/List switch works with Space and reports its pressed state.
+- **Dialogs:**
+  - The remove and delete confirmations open with focus on Cancel and keep Tab inside the dialog. Escape or Cancel closes them, changes nothing, and returns focus to the button that opened them.
+  - Edit question's Cancel returns focus to Edit question.
+  - The tour is a true modal. While a chapter is open, the page behind it is inert, and Tab and Shift+Tab stay in the panel. Skip tour or Escape always closes it, and focus and the page are restored afterwards.
+- **Forms:**
+  - Every field has a visible label tied to it, and optional fields say "(optional)".
+  - The two radio groups (reading type and relationship) are fieldsets with legends, and each relationship option's description is linked to it.
+  - Hints and errors are linked to their fields (`aria-describedby`), and invalid fields are marked `aria-invalid`.
+  - On a failed submit, typed text is kept, the first invalid field is focused, and the error appears beside it in text.
+- **Map:**
+  - Each reading is a button whose name gives the title, type, author and relationship, and the selected one is marked as pressed.
+  - The **List** view shows the same readings, relationships and full notes as ordinary text.
+  - Relationships never rely on color alone: each has a text label and its own line style (solid, dashed, dotted, thin), and the legend names both.
+- **Reflow:** no horizontal scrolling at 320 px wide on any page.
+
+### Measured contrast (WCAG 2 formula, actual token colors)
+
+| Text | Background | Ratio | Needed |
+|---|---|---|---|
+| Ink `#1c1a16` | paper / raised / sunk | 15.30 / 16.38 / 13.85 | 4.5 |
+| Muted ink `#5d574c` (hints, meta, tour text) | paper / raised / sunk | 6.30 / 6.75 / 5.71 | 4.5 |
+| Oxblood `#9a3b1e` (kicker, annotations, Raised label) | paper / raised / sunk | 6.13 / 6.56 / 5.55 | 4.5 |
+| Supports `#3e5c3a` | paper / raised / sunk | 6.61 / 7.08 / 5.99 | 4.5 |
+| Challenges `#85540f` | paper / raised / sunk | 5.65 / 6.05 / 5.12 | 4.5 |
+| Adds a new perspective `#3d4f7a` | paper / raised / sunk | 7.12 / 7.62 / 6.45 | 4.5 |
+| Error `#9b2f22` | paper | 6.55 | 4.5 |
+| Saved message `#3e5c3a` | paper | 6.61 | 4.5 |
+| Warning `#6b4a0e` | warning box `#f4ead2` | 6.72 | 4.5 |
+| Paper on ink (primary button, selected toggle) | ink / hover `#33302a` | 15.30 / 11.58 | 4.5 |
+| White on oxblood (skip link) | `#9a3b1e` | 6.96 | 4.5 |
+| Placeholder (after fix) | paper | 6.30 (was 3.22) | 4.5 |
+
+Paper is `#f5f0e6`, raised `#fbf8f1`, sunk `#ece5d6`.
+
+| Non-text | Ratio | Needed |
+|---|---|---|
+| Focus ring (oxblood) against paper / sunk | 6.13 / 5.55 | 3 |
+| Field underline, button and map-node borders (ink) | 13.85–15.30 | 3 |
+| Relationship lines on the map plate | 5.12–6.45 | 3 |
+
+Three pairs measure under 3:1 but don't carry information on their own:
+- **The focus ring next to the ink button (2.50:1):** the ring is offset 2px, so a paper gap separates it from the button and it reads against paper at 6.13:1.
+- **The Book/Article toggle's outer border (1.49:1):** the options are identified by their text, and the selected one by its ink fill (15.30:1).
+- **The tour spotlight edge against the dimmed page (1.63:1):** it reads at 6.13:1 against the paper inside, and the panel names the highlighted item in text.
+
+### How it was checked
+
+**Automated** (headless Chrome, fresh temporary profiles, both sizes):
+- **axe-core 4.10.2**, with the WCAG 2.0/2.1/2.2 A and AA rules plus best practices. It was loaded only into the test browser, not added to the project. It ran on 19 states: first visit (plain, with the tour, with errors, with the live preview), returning home, 1- and 4-reading maps, detail panel, list view, both confirmation dialogs, inline question edit, the connect form (errors, and next-step mode errors), edit original reading, the next-step form with an error, the new-thread page, thread not found, and the thread tour chapter. **0 violations in every state, at both sizes, before and after the fixes.**
+- **Keyboard and focus script** using real key presses: Tab order and visible focus on each page, Enter/Space/Escape/arrow keys, dialog focus, tour focus, and focus after 9 navigations. **51/51 at each size** after the fixes. Before the fixes, the same script recorded the lost focus and the column-by-column map order described above.
+- **Contrast calculation** from the design tokens (table above), and a reflow check at 320 × 640.
+- **Tour as a modal, 60/60 at each size:** home, thread, connect and next-step chapters. For each open chapter:
+  - every page element outside the tour is inert and the tour layer isn't;
+  - the spotlight still surrounds the explained element;
+  - focus starts in the panel, and 6 Tabs plus a Shift+Tab never leave it;
+  - Chrome's accessibility tree drops the page's controls (for example "Begin the map" or "Delete thread") but still has the tour dialog;
+  - a real click on the spotlighted element does nothing, and focus stays in the panel.
+
+  It also covers Next and Back (with Enter, Space and the mouse), Get started and Got it, Skip tour, and Escape. After each close, nothing is left inert, the controls are back in the accessibility tree, focus returns (reading field, page heading, or first form field), and Tab continues in the page. Leaving a page with the browser's Back button while a chapter is open leaves nothing inert.
+- **Regression after all fixes, including the tour change:**
+  - axe: 0 violations in all 19 states.
+  - Keyboard and focus script: 51/51.
+  - Returning experience: 59/59.
+  - First-use tour: 46/46.
+  - Core flow: 52/52 on desktop and 51/51 on phone.
+
+  These are per size, except the core flow. One phone run of the returning suite stopped early because the script clicked the header link before it had rendered after reopening the browser. I added a wait to the script; the rerun passed 59/59.
+
+**Manual:**
+- I reviewed screenshots taken with keyboard focus on representative controls: the primary button, the Book/Article toggle, a map reading, the Map/List switch and a saved-map link. The focus ring was clearly visible on each.
+- I read the form, dialog, map and tour code to confirm labels, grouping and error links.
+
+### Remaining limitations
+
+- **No screen reader testing yet** (VoiceOver or NVDA). Names, roles and states were checked through the DOM and axe, not by listening. In particular, whether the page title is announced after navigation hasn't been confirmed by ear.
+- **Not tested:**
+  - Windows High Contrast / forced colors.
+  - Text-only zoom to 200%, and text-spacing overrides.
+  - Speech input.
+  - Storage-failure states.
+- **Development build only:** in the dev build, the Next.js development overlay adds a Tab stop at the end of the page. It isn't part of the production app and was excluded from the checks.
+
 ## First-run check
 
 _Pending: to be run on the deployed Vercel site after deployment._
